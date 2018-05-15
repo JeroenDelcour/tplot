@@ -1,11 +1,11 @@
 class Figure(object):
 
-    def __init__(self, figsize=(96,24)):
+    def __init__(self, figsize=(96,24), xlim=[None,None], ylim=[None,None]):
         self.width = figsize[0]
         self.height = figsize[1]
         self.margin_bottom = 1
-        self.xlim = [None, None]
-        self.ylim = [None, None]
+        self.xlim = xlim
+        self.ylim = ylim
         self.plot_queue = []
         self.margin_left = None
         self.canvas = None
@@ -90,9 +90,9 @@ class Canvas(object):
         if not self.transform:
             self._find_transform(X, Y)
         for x,y in zip(X,Y):
-            x_buffer, y_buffer = self.transform(x,y)
-#            if x_buffer >= 0 and x_buffer <= self.width+2 and y_buffer <= -1 and y_buffer >= -self.height-2:
-            self.buffer[y_buffer][x_buffer] = marker
+            if self.xlim[1] >= x >= self.xlim[0] and self.ylim[1] >= y >= self.ylim[0]:
+                x_buffer, y_buffer = self.transform(x,y)
+                self.buffer[y_buffer][x_buffer] = marker
         
 
 import numpy as np
@@ -100,7 +100,7 @@ import numpy as np
 X = np.arange(0,np.pi*4,.1)
 Y = np.sin(X)
 
-fig = Figure()
+fig = Figure(xlim=[-15,15], ylim=[0,2])
 fig.scatter(X,Y)
 fig.scatter(X,Y*2,marker='*')
 fig.show()
