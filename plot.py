@@ -1,4 +1,7 @@
-class Figure(object):
+from colorama import init as colorama_init
+from colorama import Fore
+
+class Figure:
 
     def __init__(self, figsize=(96,24), xlim=[None,None], ylim=[None,None]):
         self.width = figsize[0]
@@ -10,9 +13,10 @@ class Figure(object):
         self.margin_left = None
         self.canvas = None
         self.buffer = None
+        colorama_init()
 
-    def scatter(self, X, Y, marker='·'):
-        self.plot_queue.append({'type':'scatter', 'X':X, 'Y':Y, 'marker':marker[0]})
+    def scatter(self, X, Y, marker='·', color=None):
+        self.plot_queue.append({'type':'scatter', 'X':X, 'Y':Y, 'marker':marker[0], 'color':color})
 
     def show(self):
         self.buffer = [[' '] * self.width for n in range(self.height)]
@@ -24,7 +28,7 @@ class Figure(object):
                              self.ylim)
         for plot in self.plot_queue:
             if plot['type']=='scatter':
-                self.canvas.scatter(plot['X'], plot['Y'], plot['marker'])
+                self.canvas.scatter(plot['X'], plot['Y'], plot['marker'], plot['color'])
         for row in self.buffer:
             print(''.join(row))
 
@@ -65,7 +69,7 @@ class Figure(object):
         for i, character in enumerate(reversed(y_tick_max)): # max y`
             self.buffer[0][self.margin_left-i-1] = character
 
-class Canvas(object):
+class Canvas(Figure):
     
     def __init__(self, shape, offset, buffer_, xlim, ylim):
         self.width = shape[0]
@@ -76,6 +80,14 @@ class Canvas(object):
         self.xlim = xlim
         self.ylim = ylim
         self.transform = self._find_transform()
+        self.colors = {'black': Fore.BLACK,
+                       'red': Fore.RED,
+                       'green': Fore.GREEN,
+                       'yellow': Fore.YELLOW,
+                       'blue': Fore.BLUE,
+                       'magenta': Fore.MAGENTA,
+                       'cyan': Fore.CYAN,
+                       'white': Fore.WHITE}
 
     def _find_transform(self):
         """Find transform from data space to buffer space"""
@@ -86,9 +98,11 @@ class Canvas(object):
         return lambda x,y: (int(round(x*x_scaling+x_offset)),
                                       int(round(y*y_scaling+y_offset)))
 
-    def scatter(self, X, Y, marker='.'):
+    def scatter(self, X, Y, marker='.', color=None):
         if not self.transform:
             self._find_transform(X, Y)
+        if color:
+            marker = self.colors[color] + marker + Fore.RESET
         for x,y in zip(X,Y):
             if self.xlim[1] >= x >= self.xlim[0] and self.ylim[1] >= y >= self.ylim[0]:
                 x_buffer, y_buffer = self.transform(x,y)
@@ -101,6 +115,6 @@ X = np.arange(0,np.pi*4,.1)
 Y = np.sin(X)
 
 fig = Figure(xlim=[-15,15], ylim=[0,2])
-fig.scatter(X,Y)
-fig.scatter(X,Y*2,marker='*')
+fig.scatter(X,Y,color='red')
+fig.scatter(X,Y*2,marker='*',color='blue')
 fig.show()
