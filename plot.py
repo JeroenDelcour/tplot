@@ -12,7 +12,7 @@ class Figure(object):
         self.buffer = None
 
     def scatter(self, X, Y, marker='·'):
-        self.plot_queue.append({'type':'scatter', 'X':X, 'Y':Y, 'marker':marker})
+        self.plot_queue.append({'type':'scatter', 'X':X, 'Y':Y, 'marker':marker[0]})
 
     def show(self):
         self.buffer = [[' '] * self.width for n in range(self.height)]
