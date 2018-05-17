@@ -1,0 +1,2 @@
+colorama==0.3.9
+pkg-resources==0.0.0
