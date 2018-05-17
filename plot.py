@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*- 
+
 from colorama import init as colorama_init
 from colorama import Fore
 
@@ -109,12 +112,16 @@ class Canvas(Figure):
                 self.buffer[y_buffer][x_buffer] = marker
         
 
-import numpy as np
+from math import sin
+from time import time
 
-X = np.arange(0,np.pi*4,.1)
-Y = np.sin(X)
+X = [x/10 for x in range(100)]
+Y = [sin(x) for x in X]
+Y2 = [y*2 for y in Y]
 
+t0 = time()
 fig = Figure(xlim=[-15,15], ylim=[0,2])
-fig.scatter(X,Y,color='red')
-fig.scatter(X,Y*2,marker='*',color='blue')
+fig.scatter(X,Y,color='white')
+fig.scatter(X,Y2,marker='*',color='red')
 fig.show()
+print(time()-t0)
