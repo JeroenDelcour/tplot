@@ -2,11 +2,30 @@
 # -*- coding: utf-8 -*- 
 
 from colorama import init as colorama_init
-from colorama import Fore
+from colorama import Fore, Back
+
+colors = {'fore': {'black': Fore.BLACK,
+                   'red': Fore.RED,
+                   'green': Fore.GREEN,
+                   'yellow': Fore.YELLOW,
+                   'blue': Fore.BLUE,
+                   'magenta': Fore.MAGENTA,
+                   'cyan': Fore.CYAN,
+                   'white': Fore.WHITE},
+          'back': {'black': Back.BLACK,
+                   'red': Back.RED,
+                   'green': Back.GREEN,
+                   'yellow': Back.YELLOW,
+                   'blue': Back.BLUE,
+                   'magenta': Back.MAGENTA,
+                   'cyan': Back.CYAN,
+                   'white': Back.WHITE}
+          }
+bright_colors = ['white', 'yellow', 'cyan', 'green']
 
 class Figure:
 
-    def __init__(self, figsize=(96,24), xlim=[None,None], ylim=[None,None]):
+    def __init__(self, figsize=(96,24), xlim=[None,None], ylim=[None,None], bgcolor=None):
         self.width = figsize[0]
         self.height = figsize[1]
         self.margin_bottom = 1
@@ -16,6 +35,7 @@ class Figure:
         self.margin_left = None
         self.canvas = None
         self.buffer = None
+        self.bgcolor = bgcolor
         colorama_init()
 
     def scatter(self, X, Y, marker='·', color=None):
@@ -30,10 +50,15 @@ class Figure:
                              self.xlim,
                              self.ylim)
         for plot in self.plot_queue:
+            if self.bgcolor in bright_colors and plot['color']==None:
+                plot['color'] = 'black'
             if plot['type']=='scatter':
                 self.canvas.scatter(plot['X'], plot['Y'], plot['marker'], plot['color'])
+        if self.bgcolor:
+            print(colors['back'][self.bgcolor])
         for row in self.buffer:
             print(''.join(row))
+        print(Fore.RESET + Back.RESET)
 
 
     def _draw_axes(self):
@@ -46,6 +71,11 @@ class Figure:
         if self.ylim[1]==None:
             self.ylim[1] = max([max(plot['Y']) for plot in self.plot_queue])
 
+        c, cr = '',''
+        if self.bgcolor in bright_colors:
+            c = colors['fore']['black']
+            cr = Fore.RESET
+
         # get size of left margin to fit y-axis tick labels
         y_tick_min = '{:G}'.format(self.ylim[0])
         y_tick_max = '{:G}'.format(self.ylim[1])
@@ -53,24 +83,24 @@ class Figure:
 
         # axes
         for y in range(self.height): # vertical
-            self.buffer[y][self.margin_left] = '│'
+            self.buffer[y][self.margin_left] = c+'│'+cr
         for x in range(self.margin_left, self.width):  # horizontal
-            self.buffer[-self.margin_bottom-1][x] = '─'
-        self.buffer[-self.margin_bottom-1][self.margin_left] = '┼'
+            self.buffer[-self.margin_bottom-1][x] = c+'─'+cr
+        self.buffer[-self.margin_bottom-1][self.margin_left] = c+'┼'+cr
 
         # ticks
-        self.buffer[-self.margin_bottom-1][-1] = '┬'
-        self.buffer[0][self.margin_left] = '┤'
+        self.buffer[-self.margin_bottom-1][-1] = c+'┬'+cr
+        self.buffer[0][self.margin_left] = c+'┤'+cr
 
         # tick labels
         for i, character in enumerate('{:G}'.format(self.xlim[0])): # min x
-            self.buffer[-self.margin_bottom][self.margin_left+i] = character
+            self.buffer[-self.margin_bottom][self.margin_left+i] = c+character+cr
         for i, character in enumerate(reversed('{:G}'.format(self.xlim[1]))): # max x
-            self.buffer[-self.margin_bottom][-i-1] = character
+            self.buffer[-self.margin_bottom][-i-1] = c+character+cr
         for i, character in enumerate(reversed(y_tick_min)): # min y
-            self.buffer[-self.margin_bottom-1][self.margin_left-i-1] = character
+            self.buffer[-self.margin_bottom-1][self.margin_left-i-1] = c+character+cr
         for i, character in enumerate(reversed(y_tick_max)): # max y`
-            self.buffer[0][self.margin_left-i-1] = character
+            self.buffer[0][self.margin_left-i-1] = c+character+cr
 
 class Canvas(Figure):
     
@@ -83,14 +113,6 @@ class Canvas(Figure):
         self.xlim = xlim
         self.ylim = ylim
         self.transform = self._find_transform()
-        self.colors = {'black': Fore.BLACK,
-                       'red': Fore.RED,
-                       'green': Fore.GREEN,
-                       'yellow': Fore.YELLOW,
-                       'blue': Fore.BLUE,
-                       'magenta': Fore.MAGENTA,
-                       'cyan': Fore.CYAN,
-                       'white': Fore.WHITE}
 
     def _find_transform(self):
         """Find transform from data space to buffer space"""
@@ -105,7 +127,7 @@ class Canvas(Figure):
         if not self.transform:
             self._find_transform(X, Y)
         if color:
-            marker = self.colors[color] + marker + Fore.RESET
+            marker = colors['fore'][color] + marker + Fore.RESET
         for x,y in zip(X,Y):
             if self.xlim[1] >= x >= self.xlim[0] and self.ylim[1] >= y >= self.ylim[0]:
                 x_buffer, y_buffer = self.transform(x,y)
@@ -120,8 +142,8 @@ Y = [sin(x) for x in X]
 Y2 = [y*2 for y in Y]
 
 t0 = time()
-fig = Figure(xlim=[-15,15], ylim=[0,2])
-fig.scatter(X,Y,color='white')
+fig = Figure(xlim=[-15,15], ylim=[0,2], bgcolor='cyan')
+fig.scatter(X,Y)
 fig.scatter(X,Y2,marker='*',color='red')
 fig.show()
 print(time()-t0)
