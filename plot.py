@@ -62,6 +62,9 @@ class Figure:
 
 
     def _draw_axes(self):
+
+        format = lambda x: '{:G}'.format(x)
+
         if self.xlim[0]==None:
             self.xlim[0] = min([min(plot['X']) for plot in self.plot_queue])
         if self.xlim[1]==None:
@@ -71,31 +74,29 @@ class Figure:
         if self.ylim[1]==None:
             self.ylim[1] = max([max(plot['Y']) for plot in self.plot_queue])
 
-        c, cr = '',''
-        if self.bgcolor in bright_colors:
-            c = colors['fore']['black']
-            cr = Fore.RESET
+        # paint it black if using bright background
+        c, cr = (colors['fore']['black'], Fore.RESET) if self.bgcolor in bright_colors else ('', '')
 
         # get size of left margin to fit y-axis tick labels
-        y_tick_min = '{:G}'.format(self.ylim[0])
-        y_tick_max = '{:G}'.format(self.ylim[1])
+        y_tick_min = format(self.ylim[0])
+        y_tick_max = format(self.ylim[1])
         self.margin_left = max(len(y_tick_min), len(y_tick_max))
 
-        # axes
+        # draw axes
         for y in range(self.height): # vertical
             self.buffer[y][self.margin_left] = c+'│'+cr
         for x in range(self.margin_left, self.width):  # horizontal
             self.buffer[-self.margin_bottom-1][x] = c+'─'+cr
         self.buffer[-self.margin_bottom-1][self.margin_left] = c+'┼'+cr
 
-        # ticks
+        # draw ticks
         self.buffer[-self.margin_bottom-1][-1] = c+'┬'+cr
         self.buffer[0][self.margin_left] = c+'┤'+cr
 
-        # tick labels
-        for i, character in enumerate('{:G}'.format(self.xlim[0])): # min x
+        # draw tick labels
+        for i, character in enumerate(format(self.xlim[0])): # min x
             self.buffer[-self.margin_bottom][self.margin_left+i] = c+character+cr
-        for i, character in enumerate(reversed('{:G}'.format(self.xlim[1]))): # max x
+        for i, character in enumerate(reversed(format(self.xlim[1]))): # max x
             self.buffer[-self.margin_bottom][-i-1] = c+character+cr
         for i, character in enumerate(reversed(y_tick_min)): # min y
             self.buffer[-self.margin_bottom-1][self.margin_left-i-1] = c+character+cr
@@ -121,7 +122,7 @@ class Canvas(Figure):
         y_scaling = -(self.height-1) / (self.ylim[1] - self.ylim[0])
         y_offset = self.ylim[0] * -y_scaling - 1 - self.offset_y
         return lambda x,y: (int(round(x*x_scaling+x_offset)),
-                                      int(round(y*y_scaling+y_offset)))
+                            int(round(y*y_scaling+y_offset)))
 
     def scatter(self, X, Y, marker='.', color=None):
         if not self.transform:
