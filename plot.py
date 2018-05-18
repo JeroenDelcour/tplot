@@ -65,14 +65,10 @@ class Figure:
 
         format = lambda x: '{:G}'.format(x)
 
-        if self.xlim[0]==None:
-            self.xlim[0] = min([min(plot['X']) for plot in self.plot_queue])
-        if self.xlim[1]==None:
-            self.xlim[1] = max([max(plot['X']) for plot in self.plot_queue])
-        if self.ylim[0]==None:
-            self.ylim[0] = min([min(plot['Y']) for plot in self.plot_queue])
-        if self.ylim[1]==None:
-            self.ylim[1] = max([max(plot['Y']) for plot in self.plot_queue])
+        if self.xlim[0] == None: self.xlim[0] = min([min(p['X']) for p in self.plot_queue])
+        if self.xlim[1] == None: self.xlim[1] = max([max(p['X']) for p in self.plot_queue])
+        if self.ylim[0] == None: self.ylim[0] = min([min(p['Y']) for p in self.plot_queue])
+        if self.ylim[1] == None: self.ylim[1] = max([max(p['Y']) for p in self.plot_queue])
 
         # paint it black if using bright background
         c, cr = (colors['fore']['black'], Fore.RESET) if self.bgcolor in bright_colors else ('', '')
@@ -125,10 +121,7 @@ class Canvas(Figure):
                             int(round(y*y_scaling+y_offset)))
 
     def scatter(self, X, Y, marker='.', color=None):
-        if not self.transform:
-            self._find_transform(X, Y)
-        if color:
-            marker = colors['fore'][color] + marker + Fore.RESET
+        if color: marker = colors['fore'][color] + marker + Fore.RESET
         for x,y in zip(X,Y):
             if self.xlim[1] >= x >= self.xlim[0] and self.ylim[1] >= y >= self.ylim[0]:
                 x_buffer, y_buffer = self.transform(x,y)
