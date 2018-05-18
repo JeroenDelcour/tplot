@@ -42,7 +42,7 @@ class Figure:
         self.plot_queue.append({'type':'scatter', 'X':X, 'Y':Y, 'marker':marker[0], 'color':color})
 
     def show(self):
-        self.buffer = [[' '] * self.width for n in range(self.height)]
+        self.buffer = [[' ' for w in range(self.width)] for h in range(self.height)]
         self._draw_axes()
         self.canvas = Canvas((self.width-self.margin_left, self.height-self.margin_bottom),
                              (self.margin_left, self.margin_bottom),
@@ -54,11 +54,10 @@ class Figure:
                 plot['color'] = 'black'
             if plot['type']=='scatter':
                 self.canvas.scatter(plot['X'], plot['Y'], plot['marker'], plot['color'])
-        if self.bgcolor:
-            print(colors['back'][self.bgcolor])
+        if self.bgcolor: print(colors['back'][self.bgcolor])
         for row in self.buffer:
             print(''.join(row))
-        print(Fore.RESET + Back.RESET)
+        if self.bgcolor: print(Back.RESET)
 
 
     def _draw_axes(self):
