@@ -25,6 +25,8 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=[None,None], ylim=[No
     BRIGHT_COLORS = ['white', 'yellow', 'cyan', 'green']
     MARGIN_BOTTOM = 1
 
+    colorama_init()
+
     # expand dimensions
     if type(X[0]) != list: X = [X]
     if type(Y[0]) != list: Y = [Y]
