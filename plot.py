@@ -42,13 +42,13 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
 
     def find_transform():
         "Find transform from data space to plot space"
-        x_scaling = (width-margin_left-1) / (xlim[1] - xlim[0])
+        x_scaling = (width-margin_left-margin_right-1) / (xlim[1] - xlim[0])
         x_offset = xlim[0] * -x_scaling + margin_left
-        y_scaling = -(height-margin_bottom-1) / (ylim[1] - ylim[0])
+        y_scaling = -(height-margin_bottom-margin_top-1) / (ylim[1] - ylim[0])
         y_offset = ylim[0] * -y_scaling - 1 - margin_bottom
         return lambda x,y: (int(round(x*x_scaling+x_offset)),
                                  int(round(y*y_scaling+y_offset)))
-    margin_left, margin_bottom = 0, 0
+    margin_left, margin_bottom, margin_top, margin_right = 0, 0, 0, 0
     transform = find_transform()
 
     # determine axes positions
@@ -60,12 +60,16 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
     # calculate margins for tick labels
     y_tick_min = format(ylim[0], fmt)
     y_tick_max = format(ylim[1], fmt)
-    margin_left = max(max(len(y_tick_min), len(y_tick_max)) - y_axis_pos, 0)
+    y_label_len = max(len(y_tick_min), len(y_tick_max))
+    margin_left = max(y_label_len - y_axis_pos, 0)
+    if y_axis_pos == width-1: margin_right = y_label_len
+    print(margin_right)
     margin_bottom = 0 + (x_axis_pos==-1)
+    margin_top = 0 + (x_axis_pos==-height)
 
     # correct axes and transform for margins
-    y_axis_pos += margin_left
-    x_axis_pos -= margin_bottom
+    y_axis_pos += margin_left - margin_right
+    x_axis_pos -= margin_bottom - margin_top
     transform = find_transform()
 
     # if background color is set, set best contrasting default foreground colors
@@ -76,14 +80,14 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
     # draw axes
     for y in range(height): # vertical
         buffer[y][y_axis_pos] = c+'│'+cr
-    for x in range(margin_left, width):  # horizontal
+    for x in range(margin_left, width-margin_right):  # horizontal
         buffer[x_axis_pos][x] = c+'─'+cr
     buffer[x_axis_pos][y_axis_pos] = c+'┼'+cr
 
     # draw tick marks
-    buffer[x_axis_pos][-1] = c+'┼'+cr
+    buffer[x_axis_pos][-margin_right-1] = c+'┼'+cr
     buffer[x_axis_pos][margin_left] = c+'┼'+cr
-    buffer[0][y_axis_pos] = c+'┼'+cr
+    buffer[margin_top][y_axis_pos] = c+'┼'+cr
     buffer[-1][y_axis_pos] = c+'┼'+cr
 
     # draw data
@@ -100,13 +104,13 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
 
     # draw tick labels
     for i, character in enumerate(format(xlim[0], fmt)): # min x
-        buffer[x_axis_pos+1][margin_left+i] = c+character+cr
-    for i, character in enumerate(reversed(format(xlim[1]))): # max x
-        buffer[x_axis_pos+1][-i-1] = c+character+cr
+        buffer[x_axis_pos+1-margin_top*2][margin_left+i] = c+character+cr
+    for i, character in enumerate(reversed(format(xlim[1], fmt))): # max x
+        buffer[x_axis_pos+1-margin_top*2][-i-1-margin_right] = c+character+cr
     for i, character in enumerate(reversed(y_tick_min)): # min y
-        buffer[-margin_bottom-1][y_axis_pos-i-1] = c+character+cr
+        buffer[-margin_bottom-1][y_axis_pos-i-1+margin_right+(margin_right>0)] = c+character+cr
     for i, character in enumerate(reversed(y_tick_max)): # max y`
-        buffer[0][y_axis_pos-i-1] = c+character+cr
+        buffer[margin_top][y_axis_pos-i-1+margin_right+(margin_right>0)*(len(y_tick_max)-margin_right+1)] = c+character+cr
 
     if bgcolor: # set background color
         buffer[0].insert(0, COLORS['back'][bgcolor])
@@ -125,7 +129,7 @@ def test():
     t0 = time()
     print(plot([0,1,2,3,4,5], [0,1,2,3,4,5], size=small))
     print()
-    print(plot(range(-5,1), range(-10,-4), marker='+', color='red', bgcolor='blue', size=small))
+    print(plot(range(-100000,-5000,100000), range(-100000,-5000,100000), marker='+', color='red', bgcolor='blue', size=small))
     print()
     print(plot(((-5,-4,-3,-2,-1,0,1,2,3,4,5),(-5,-4,-3,-2,-1,0,1,2,3,4,5)),
                ((-5,-4,-3,-2,-1,0,1,2,3,4,5),(5,4,3,2,1,0,-1,-2,-3,-4,-5)),
