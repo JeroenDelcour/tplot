@@ -4,139 +4,109 @@
 from colorama import init as colorama_init
 from colorama import Fore, Back
 
-colors = {'fore': {'black': Fore.BLACK,
-                   'red': Fore.RED,
-                   'green': Fore.GREEN,
-                   'yellow': Fore.YELLOW,
-                   'blue': Fore.BLUE,
-                   'magenta': Fore.MAGENTA,
-                   'cyan': Fore.CYAN,
-                   'white': Fore.WHITE},
-          'back': {'black': Back.BLACK,
-                   'red': Back.RED,
-                   'green': Back.GREEN,
-                   'yellow': Back.YELLOW,
-                   'blue': Back.BLUE,
-                   'magenta': Back.MAGENTA,
-                   'cyan': Back.CYAN,
-                   'white': Back.WHITE}
-          }
-bright_colors = ['white', 'yellow', 'cyan', 'green']
+def plot(X, Y, marker='·', color=None, size=(96,24), xlim=[None,None], ylim=[None,None], bgcolor=None, fmt='G'):
+    COLORS = {'fore': {'black': Fore.BLACK,
+                       'red': Fore.RED,
+                       'green': Fore.GREEN,
+                       'yellow': Fore.YELLOW,
+                       'blue': Fore.BLUE,
+                       'magenta': Fore.MAGENTA,
+                       'cyan': Fore.CYAN,
+                       'white': Fore.WHITE},
+              'back': {'black': Back.BLACK,
+                       'red': Back.RED,
+                       'green': Back.GREEN,
+                       'yellow': Back.YELLOW,
+                       'blue': Back.BLUE,
+                       'magenta': Back.MAGENTA,
+                       'cyan': Back.CYAN,
+                       'white': Back.WHITE}
+              }
+    BRIGHT_COLORS = ['white', 'yellow', 'cyan', 'green']
+    MARGIN_BOTTOM = 1
 
-class Figure:
+    # expand dimensions
+    if type(X[0]) != list: X = [X]
+    if type(Y[0]) != list: Y = [Y]
+    if type(marker) != list: marker = [marker]*len(X)
+    if type(color) != list: color = [color]*len(X)
 
-    def __init__(self, figsize=(96,24), xlim=[None,None], ylim=[None,None], bgcolor=None):
-        self.width = figsize[0]
-        self.height = figsize[1]
-        self.margin_bottom = 1
-        self.xlim = xlim
-        self.ylim = ylim
-        self.plot_queue = []
-        self.margin_left = None
-        self.canvas = None
-        self.buffer = None
-        self.bgcolor = bgcolor
-        colorama_init()
+    width, height = size
+    buffer = [[' ' for w in range(width)] for h in range(height)]
 
-    def scatter(self, X, Y, marker='·', color=None):
-        self.plot_queue.append({'type':'scatter', 'X':X, 'Y':Y, 'marker':marker[0], 'color':color})
+    xlim[0] = xlim[0] or min([min(x) for x in X])
+    xlim[1] = xlim[1] or max([max(x) for x in X])
+    ylim[0] = ylim[0] or min([min(y) for y in Y])
+    ylim[1] = ylim[1] or max([max(y) for y in Y])
 
-    def show(self):
-        self.buffer = [[' ' for w in range(self.width)] for h in range(self.height)]
-        self._draw_axes()
-        self.canvas = Canvas((self.width-self.margin_left, self.height-self.margin_bottom),
-                             (self.margin_left, self.margin_bottom),
-                             self.buffer,
-                             self.xlim,
-                             self.ylim)
-        for plot in self.plot_queue:
-            if self.bgcolor in bright_colors and plot['color']==None:
-                plot['color'] = 'black'
-            if plot['type']=='scatter':
-                self.canvas.scatter(plot['X'], plot['Y'], plot['marker'], plot['color'])
-        if self.bgcolor: print(colors['back'][self.bgcolor])
-        for row in self.buffer:
-            print(''.join(row))
-        if self.bgcolor: print(Back.RESET)
+    # calculate size of left margin to fit y-axis tick labels
+    y_tick_min = format(ylim[0], fmt)
+    y_tick_max = format(ylim[1], fmt)
+    margin_left = max(len(y_tick_min), len(y_tick_max))
 
+    # find transform from data space to plot space
+    x_scaling = (width-margin_left-1) / (xlim[1] - xlim[0])
+    x_offset = xlim[0] * -x_scaling + margin_left
+    y_scaling = -(height-MARGIN_BOTTOM-1) / (ylim[1] - ylim[0])
+    y_offset = ylim[0] * -y_scaling - 1 - MARGIN_BOTTOM
+    transform = lambda x,y: (int(round(x*x_scaling+x_offset)),
+                             int(round(y*y_scaling+y_offset)))
 
-    def _draw_axes(self):
+    # if background color is set, set best contrasting default foreground colors
+    if not bgcolor: c, cr = ('', '')
+    elif bgcolor in BRIGHT_COLORS: c, cr = (COLORS['fore']['black'], Fore.RESET)
+    else: c, cr = (COLORS['fore']['white'], Fore.RESET)
 
-        format = lambda x: '{:G}'.format(x)
+    # draw axes
+    for y in range(height): # vertical
+        buffer[y][margin_left] = c+'│'+cr
+    for x in range(margin_left, width):  # horizontal
+        buffer[-MARGIN_BOTTOM-1][x] = c+'─'+cr
+    buffer[-MARGIN_BOTTOM-1][margin_left] = c+'┼'+cr
 
-        if self.xlim[0] == None: self.xlim[0] = min([min(p['X']) for p in self.plot_queue])
-        if self.xlim[1] == None: self.xlim[1] = max([max(p['X']) for p in self.plot_queue])
-        if self.ylim[0] == None: self.ylim[0] = min([min(p['Y']) for p in self.plot_queue])
-        if self.ylim[1] == None: self.ylim[1] = max([max(p['Y']) for p in self.plot_queue])
+    # draw tick marks
+    buffer[-MARGIN_BOTTOM-1][-1] = c+'┬'+cr
+    buffer[0][margin_left] = c+'┤'+cr
 
-        # paint it black if using bright background
-        c, cr = (colors['fore']['black'], Fore.RESET) if self.bgcolor in bright_colors else ('', '')
+    # draw tick labels
+    for i, character in enumerate(format(xlim[0])): # min x
+        buffer[-MARGIN_BOTTOM][margin_left+i] = c+character+cr
+    for i, character in enumerate(reversed(format(xlim[1]))): # max x
+        buffer[-MARGIN_BOTTOM][-i-1] = c+character+cr
+    for i, character in enumerate(reversed(y_tick_min)): # min y
+        buffer[-MARGIN_BOTTOM-1][margin_left-i-1] = c+character+cr
+    for i, character in enumerate(reversed(y_tick_max)): # max y`
+        buffer[0][margin_left-i-1] = c+character+cr
 
-        # get size of left margin to fit y-axis tick labels
-        y_tick_min = format(self.ylim[0])
-        y_tick_max = format(self.ylim[1])
-        self.margin_left = max(len(y_tick_min), len(y_tick_max))
+    # draw data
+    for X_, Y_, marker_, color_ in zip(X, Y, marker, color):
+        # set marker color
+        if color_: marker_ = COLORS['fore'][color_] + marker_ + Fore.RESET
+        elif bgcolor in BRIGHT_COLORS: marker_ = COLORS['fore']['black'] + marker_ + Fore.RESET
+        else: marker_ = COLORS['fore']['white'] + marker_ + Fore.RESET
+        # draw data
+        for x,y in zip(X_,Y_):
+            if xlim[1] >= x >= xlim[0] and ylim[1] >= y >= ylim[0]: # in bounds
+                x_buffer, y_buffer = transform(x,y)
+                buffer[y_buffer][x_buffer] = marker_
 
-        # draw axes
-        for y in range(self.height): # vertical
-            self.buffer[y][self.margin_left] = c+'│'+cr
-        for x in range(self.margin_left, self.width):  # horizontal
-            self.buffer[-self.margin_bottom-1][x] = c+'─'+cr
-        self.buffer[-self.margin_bottom-1][self.margin_left] = c+'┼'+cr
+    if bgcolor: # set background color
+        buffer[0].insert(0, COLORS['back'][bgcolor])
+        buffer[-1].append(Back.RESET)
 
-        # draw ticks
-        self.buffer[-self.margin_bottom-1][-1] = c+'┬'+cr
-        self.buffer[0][self.margin_left] = c+'┤'+cr
+    return '\n'.join([''.join(row) for row in buffer])
 
-        # draw tick labels
-        for i, character in enumerate(format(self.xlim[0])): # min x
-            self.buffer[-self.margin_bottom][self.margin_left+i] = c+character+cr
-        for i, character in enumerate(reversed(format(self.xlim[1]))): # max x
-            self.buffer[-self.margin_bottom][-i-1] = c+character+cr
-        for i, character in enumerate(reversed(y_tick_min)): # min y
-            self.buffer[-self.margin_bottom-1][self.margin_left-i-1] = c+character+cr
-        for i, character in enumerate(reversed(y_tick_max)): # max y`
-            self.buffer[0][self.margin_left-i-1] = c+character+cr
+def test():
+    from math import sin, cos
+    from time import time
 
-class Canvas(Figure):
-    
-    def __init__(self, shape, offset, buffer_, xlim, ylim):
-        self.width = shape[0]
-        self.height = shape[1]
-        self.offset_x = offset[0]
-        self.offset_y = offset[1]
-        self.buffer = buffer_
-        self.xlim = xlim
-        self.ylim = ylim
-        self.transform = self._find_transform()
+    X = [x/10 for x in range(100)]
+    Y = [sin(x) for x in X]
+    X2 = [x/10 for x in range(200)]
+    Y2 = [cos(x) for x in X2]
 
-    def _find_transform(self):
-        """Find transform from data space to buffer space"""
-        x_scaling = (self.width-1) / (self.xlim[1] - self.xlim[0])
-        x_offset = self.xlim[0] * -x_scaling + self.offset_x
-        y_scaling = -(self.height-1) / (self.ylim[1] - self.ylim[0])
-        y_offset = self.ylim[0] * -y_scaling - 1 - self.offset_y
-        return lambda x,y: (int(round(x*x_scaling+x_offset)),
-                            int(round(y*y_scaling+y_offset)))
+    t0 = time()
+    print(plot([X,X2], [Y,Y2], color=[None, 'red'], bgcolor='white'))
+    return 'All tests passed in {:G} seconds.'.format(time()-t0)
 
-    def scatter(self, X, Y, marker='.', color=None):
-        if color: marker = colors['fore'][color] + marker + Fore.RESET
-        for x,y in zip(X,Y):
-            if self.xlim[1] >= x >= self.xlim[0] and self.ylim[1] >= y >= self.ylim[0]:
-                x_buffer, y_buffer = self.transform(x,y)
-                self.buffer[y_buffer][x_buffer] = marker
-        
-
-from math import sin
-from time import time
-
-X = [x/10 for x in range(100)]
-Y = [sin(x) for x in X]
-Y2 = [y*2 for y in Y]
-
-t0 = time()
-fig = Figure(xlim=[-15,15], ylim=[0,2], bgcolor='cyan')
-fig.scatter(X,Y)
-fig.scatter(X,Y2,marker='*',color='red')
-fig.show()
-print(time()-t0)
+print(test())
