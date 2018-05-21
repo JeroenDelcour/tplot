@@ -26,8 +26,10 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
     colorama_init()
 
     # expand dimensions
-    if type(X[0])   in (int, float): X = [X]
-    if type(Y[0])   in (int, float): Y = [Y]
+    try: len(X[0])
+    except TypeError: X = [X]
+    try: len(Y[0])
+    except TypeError: Y = [Y]
     if not color or type(color)==str: color = [color]*len(X)
     if type(marker)==str: marker = [marker]*len(X)
 
