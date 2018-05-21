@@ -1,1 +1,1 @@
-from asciiplot.plot import *
+from termplot.plot import *

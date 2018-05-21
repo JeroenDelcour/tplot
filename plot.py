@@ -115,4 +115,4 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
 
     output = '\n'.join([bg+''.join(row)+bg_r for row in buffer])
     if not silent: print(output)
-    return output
+    else: return output

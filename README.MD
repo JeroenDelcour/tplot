@@ -1,1 +1,1 @@
-# asciiplot
+# termplot
