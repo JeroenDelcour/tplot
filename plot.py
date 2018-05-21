@@ -110,11 +110,11 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
     for i, character in enumerate(reversed(y_tick_max)): # max y`
         buffer[0][y_axis_pos-i-1] = c+character+cr
 
-    if bgcolor: # set background color
-        buffer[0].insert(0, COLORS['back'][bgcolor])
-        buffer[-1].append(Back.RESET)
+    # set background color
+    if bgcolor: bg, bg_r = (COLORS['back'][bgcolor], Back.RESET)
+    else: bg, bg_r = ('','')
 
-    return '\n'.join([''.join(row) for row in buffer])
+    return '\n'.join([bg+''.join(row)+bg_r for row in buffer])
 
 def test():
     from math import sin, cos
