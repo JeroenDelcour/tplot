@@ -1,10 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 
 from colorama import init as colorama_init
 from colorama import Fore, Back
 
-def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgcolor=None, fmt='G'):
+def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgcolor=None, silent=False, fmt='G'):
     COLORS = {'fore': {'black': Fore.BLACK,
                        'red': Fore.RED,
                        'green': Fore.GREEN,
@@ -114,4 +113,6 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
     if bgcolor: bg, bg_r = (COLORS['back'][bgcolor], Back.RESET)
     else: bg, bg_r = ('','')
 
-    return '\n'.join([bg+''.join(row)+bg_r for row in buffer])
+    output = '\n'.join([bg+''.join(row)+bg_r for row in buffer])
+    if not silent: print(output)
+    return output
