@@ -9,7 +9,7 @@ def test():
     import numpy as np
     import pandas as pd
 
-    small = (33,13)
+    small = (32,12)
     t0 = time()
     X = [0,1,2,3,4,5,6,7,8,9,10]
     Y = [0,1,2,3,4,5,6,7,8,9,10]
@@ -17,6 +17,12 @@ def test():
     print()
     X, Y = range(-5,1), range(-10,-4)
     plot(X, Y, marker='+', color='red', bgcolor='blue', size=small)
+    print()
+    values = np.arange(0, np.pi*2, np.pi/20)
+    r = 4
+    X = r * np.cos(values)
+    Y = r * np.sin(values)
+    plot(X, Y, marker='o', color='yellow', size=small)
     print()
     X1 = np.arange(-5,6)
     X2 = X1
