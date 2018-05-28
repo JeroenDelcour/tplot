@@ -3,7 +3,7 @@
 from colorama import init as colorama_init
 from colorama import Fore, Back
 
-def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgcolor=None, silent=False, fmt='G'):
+def scatter(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgcolor=None, silent=False, fmt='G'):
     COLORS = {'fore': {'black': Fore.BLACK,
                        'red': Fore.RED,
                        'green': Fore.GREEN,
@@ -26,7 +26,7 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
 
     colorama_init()
 
-    # expand dimensions
+    # always work with a list of datasets
     try: len(X[0])
     except TypeError: X = [X]
     try: len(Y[0])
@@ -34,22 +34,24 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
     if not color or type(color)==str: color = [color]*len(X)
     if type(marker)==str: marker = [marker]*len(X)
 
+    # initialize buffer
     width, height = size
     buffer = [[' ' for w in range(width)] for h in range(height)]
 
+    # set axes limits
     if xlim==None: xlim = (min((min(x) for x in X)), max((max(x) for x in X)))
     if ylim==None: ylim = (min((min(y) for y in Y)), max((max(y) for y in Y)))
     assert(xlim[1]>xlim[0])
     assert(ylim[1]>ylim[0])
 
-    # calculate size of left margin to fit y-axis tick labels
+    # make room for y-axis tick labels
     y_tick_min = format(ylim[0], fmt)
     y_tick_max = format(ylim[1], fmt)
     margin_left = max(len(y_tick_min), len(y_tick_max))
     y_axis_pos = margin_left
     x_axis_pos = -MARGIN_BOTTOM - 1
 
-    # find transform from data space to plot space
+    # find transform function from data space to plot space
     x_scaling = (width-margin_left-1) / (xlim[1] - xlim[0])
     x_offset = xlim[0] * -x_scaling + margin_left
     y_scaling = -(height-MARGIN_BOTTOM-1) / (ylim[1] - ylim[0])
@@ -57,10 +59,12 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
     transform = lambda x,y: (int(round(x*x_scaling+x_offset)),
                              int(round(y*y_scaling+y_offset)))
 
-    # if background color is set, set best contrasting default foreground colors
-    if not bgcolor: c, cr = ('', '')
-    elif bgcolor in BRIGHT_COLORS: c, cr = (COLORS['fore']['black'], Fore.RESET)
-    else: c, cr = (COLORS['fore']['white'], Fore.RESET)
+    # set highest contrast default colors
+    if bgcolor:
+        bg, bg_r = (COLORS['back'][bgcolor], Back.RESET)
+        if bgcolor in BRIGHT_COLORS: c, cr = (COLORS['fore']['black'], Fore.RESET)
+        else: c, cr = (COLORS['fore']['white'], Fore.RESET)
+    else: c, cr, bg, bg_r = ('', '', '', '')
 
     # draw axes
     for y in range(height): # vertical
@@ -105,10 +109,6 @@ def plot(X, Y, marker='·', color=None, size=(96,24), xlim=None, ylim=None, bgco
         buffer[-MARGIN_BOTTOM-1][y_axis_pos-i-1] = c+character+cr
     for i, character in enumerate(reversed(y_tick_max)): # max y`
         buffer[0][y_axis_pos-i-1] = c+character+cr
-
-    # set background color
-    if bgcolor: bg, bg_r = (COLORS['back'][bgcolor], Back.RESET)
-    else: bg, bg_r = ('','')
 
     output = '\n'.join([bg+''.join(row)+bg_r for row in buffer])
     if not silent: print(output)
