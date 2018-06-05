@@ -21,6 +21,8 @@ def get_braille(s):
     '11001111' = ⢻
     '11111111' = ⣿
     '00000000' = ⠀ (empty braille character)
+
+    For more info on the interesting relationship between binary and unicode braille dot ordering, see: https://en.wikipedia.org/wiki/Braille_Patterns#Identifying,_naming_and_ordering
     """
     s = s[:3] + s[4:7] + s[3] + s[7] # rearrange ISO/TR 11548-1 dot order to something more managable
     return chr(10240 + int(s[::-1],2))
