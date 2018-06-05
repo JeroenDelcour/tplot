@@ -22,6 +22,14 @@ def get_braille(s):
     '11111111' = ⣿
     '00000000' = ⠀ (empty braille character)
     """
-    return chr(10240 + int(s,2))
+    s = s[:3] + s[4:7] + s[3] + s[7] # rearrange ISO/TR 11548-1 dot order to something more managable
+    return chr(10240 + int(s[::-1],2))
 
-print(get_braille('11111111'))
+def test():
+    assert(get_braille('10000000') == '⠁')
+    assert(get_braille('11001111') == '⢻')
+    assert(get_braille('11001111') == '⢻')
+    assert(get_braille('11111111') == '⣿')
+    assert(get_braille('00011110') == '⡸')
+    assert(get_braille('00000000') == '⠀')
+    print('All tests completed succesfully.')
