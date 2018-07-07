@@ -2,7 +2,7 @@
 
 from colorama import init as colorama_init
 from colorama import Fore, Back
-from get_braille import get_braille
+from termplot.utils import *
 
 def scatter(X, Y, marker=None, color=None, size=(96,24), xlim=None, ylim=None, bgcolor=None, silent=False, fmt='G'):
     COLORMAP = {'fore': {'black': Fore.BLACK,

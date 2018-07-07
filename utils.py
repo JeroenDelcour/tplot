@@ -31,7 +31,7 @@ def get_braille(s):
     s = s[:3] + s[4:7] + s[3] + s[7] # rearrange ISO/TR 11548-1 dot order to something more managable
     return chr(10240 + int(s[::-1],2))
 
-def test():
+def test_braille():
     assert(get_braille('10000000') == '⠁')
     assert(get_braille('11001111') == '⢻')
     assert(get_braille('11001111') == '⢻')

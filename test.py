@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 
-from plot import scatter
+from termplot.plot import *
 
 def test():
     from math import sin, cos
@@ -46,6 +46,3 @@ def test():
     print()
 
     return 'All tests finished in {:G} seconds.'.format(time()-t0)
-
-if __name__=="__main__":
-    print(test())
