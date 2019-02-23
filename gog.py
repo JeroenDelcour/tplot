@@ -1,3 +1,6 @@
+# Grammar of graphics: https://ucsb-bren.github.io/env-info/refs/lit/Wickham%20-%202010%20-%20A%20Layered%20Grammar%20of%20Graphics.pdf
+# Geometric shapes unicode: https://en.wikipedia.org/wiki/Geometric_Shapes
+
 import itertools
 import pandas as pd
 
@@ -27,44 +30,43 @@ plottable_dataset = pd.DataFrame({
 # I.e. map column A to x-coordinates, column C to y-coordinates,
 # and column D to geometric shapes. Since A and C are continuous,
 # we choose to map them using a linear scale to a Cartesian coordinate
-# system. Let's write a function that does that.
+# system. Let's write a function that creates these mappings.
 
 
-def linear_transform(X, Y, canvas_width, canvas_height):
-    x_min = min(X)
-    y_min = min(Y)
-    x_range = max(X) - x_min
-    y_range = max(Y) - y_min
-
-    def transform(x, y):
-        x = int((canvas_width-1)*(x-x_min)/x_range)
-        y = int(-(canvas_height-1)*(y-y_min)/y_range)-1  # inverted
-        return x, y
-    return transform
-
-# Let's also write a function that maps values to geometric objects:
-
-
-def geom_map(data, geoms=['●', '■', '▲']):
-    geoms = ['o', 'x', '#', '*']
-    map = {value: geom for value, geom in zip(
-        set(data), itertools.cycle(geoms))}
-    return lambda v: map[v]
+def aes(x=None, y=None, color=None, shape=None, label=None):
+    """ Aesthetic mapping. """
+    mapping = {}
+    if x is not None:
+        x_min = min(x)
+        x_range = max(x) - x_min
+        mapping['x'] = (int((canvas_width-1)*(x_i-x_min)/x_range)
+                        for x_i in x)
+    if y is not None:
+        y_min = min(y)
+        y_range = max(y) - y_min
+        mapping['y'] = (int(-(canvas_height-1)*(y_i-y_min)/y_range)-1
+                        for y_i in y)
+    shapes = ['●', '■', '▲']
+    if shape is not None:
+        shapemap = {v: g for v, g in zip(set(shape), itertools.cycle(shapes))}
+        mapping['shape'] = (shapemap[shape_i] for shape_i in shape)
+    else:
+        mapping['shape'] = itertools.cycle(shapes[0])
+    return mapping
 
 
 # We're gonna need a canvas to draw on
 
+
 canvas_width, canvas_height = 16, 9
 canvas = [[' ' for w in range(canvas_width)] for h in range(canvas_height)]
 
-# Let's draw our data, using our aesthetic mapping functions
+# Let's draw our data, using our aesthetic mappings.
 
-geom = geom_map(dataset['D'])
-transform = linear_transform(
-    dataset['A'], dataset['C'], canvas_width, canvas_height)
-for x, y, g in zip(dataset['A'], dataset['C'], dataset['D']):
-    x, y = transform(x, y)
-    canvas[y][x] = geom(g)
+mapping = aes(x=dataset['A'], y=dataset['C'], shape=dataset['D'])
+for idx, row in dataset.iterrows():
+    for x, y, shape in zip(mapping['x'], mapping['y'], mapping['shape']):
+        canvas[y][x] = shape
 
 # Show the plot!
 
