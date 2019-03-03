@@ -1,74 +1,122 @@
 # Grammar of graphics: https://ucsb-bren.github.io/env-info/refs/lit/Wickham%20-%202010%20-%20A%20Layered%20Grammar%20of%20Graphics.pdf
 # Geometric shapes unicode: https://en.wikipedia.org/wiki/Geometric_Shapes
 
-import itertools
 import pandas as pd
 
-# To create a complete plot we need three things:
-# - data
-# - scales and coordinate system
-# - plot annotations (title, background, etc.)
-
-# Here's a basic dataset
 dataset = pd.DataFrame({
-    'A': [2, 1, 4, 9],
-    'B': [3, 2, 5, 10],
-    'C': [7, 1, 15, 20],
-    'D': ['a', 'a', 'b', 'b']
+    'A': [2, 1, 6, 4, 5],
+    'B': [3, 2, 3, 5, 10],
+    'C': [7, 1, 5, 15, -5],
+    'D': ['a', 'a', 'a', 'b', 'b']
 })
-
-# Let's say we want a scatter plot of column A vs column C.
-# First we need to map this data into something we can plot:
-
-plottable_dataset = pd.DataFrame({
-    'x': [25, 0, 75, 200],
-    'y': [11, 0, 53, 300],
-    'shape': ['circle', 'circle', 'square', 'square']
-})
-
-# To do this, we need functions that map the data to aesthetics.
-# I.e. map column A to x-coordinates, column C to y-coordinates,
-# and column D to geometric shapes. Since A and C are continuous,
-# we choose to map them using a linear scale to a Cartesian coordinate
-# system. Let's write a function that creates these mappings.
 
 
 def aes(x=None, y=None, color=None, shape=None, label=None):
-    """ Aesthetic mapping. """
-    mapping = {}
-    if x is not None:
-        x_min = min(x)
-        x_range = max(x) - x_min
-        mapping['x'] = (int((canvas_width-1)*(x_i-x_min)/x_range)
-                        for x_i in x)
-    if y is not None:
-        y_min = min(y)
-        y_range = max(y) - y_min
-        mapping['y'] = (int(-(canvas_height-1)*(y_i-y_min)/y_range)-1
-                        for y_i in y)
-    shapes = ['●', '■', '▲']
-    if shape is not None:
-        shapemap = {v: g for v, g in zip(set(shape), itertools.cycle(shapes))}
-        mapping['shape'] = (shapemap[shape_i] for shape_i in shape)
-    else:
-        mapping['shape'] = itertools.cycle(shapes[0])
-    return mapping
+    return {'x': x, 'y': y, 'color': color, 'shape': shape, 'label': label}
 
 
-# We're gonna need a canvas to draw on
+def linear_scale(plot):
+    X = plot.data[plot.mapping['x']]
+    Y = plot.data[plot.mapping['y']]
+    X_min = min(X)
+    Y_min = min(Y)
+    X_range = max(X) - X_min
+    Y_range = max(Y) - Y_min
+
+    def scale(x, y):
+        x = (plot.width-1)*(x-X_min)/X_range
+        y = (plot.height-1)*(y-Y_min)/Y_range
+        return int(round(x)), -int(round(y))-1
+    return scale
 
 
-canvas_width, canvas_height = 16, 9
-canvas = [[' ' for w in range(canvas_width)] for h in range(canvas_height)]
+_scales = {'linear': linear_scale}
 
-# Let's draw our data, using our aesthetic mappings.
 
-mapping = aes(x=dataset['A'], y=dataset['C'], shape=dataset['D'])
-for idx, row in dataset.iterrows():
-    for x, y, shape in zip(mapping['x'], mapping['y'], mapping['shape']):
-        canvas[y][x] = shape
+class Plot:
+    def __init__(self, data=None, mapping=None, scale='linear', width=16, height=9):
+        self.width = width
+        self.height = height
+        self.canvas = [['.' for w in range(width)] for h in range(height)]
+        self.layers = []
+        self.mapping = mapping
 
-# Show the plot!
+        self.data = data
 
-for row in canvas:
-    print(''.join(row))
+        self.scale = _scales[scale](self)
+        self.data_scaled = (self.scale(x, y) for x, y in zip(
+            self.data[mapping['x']], self.data[mapping['y']]))
+
+    def __add__(self, layer):
+        assert(isinstance(layer, Layer))
+        self.layers.append(layer)
+        return self
+
+    def draw(self):
+        for layer in self.layers:
+            layer.draw(plot)
+        print('\n'.join((''.join(row) for row in self.canvas)))
+
+
+class Layer:
+    def __init__(self, data, mapping):
+        self.data = data
+        self.mapping = mapping
+        self.plot = None
+
+
+class geom_point(Layer):
+    def __init__(self, data=None, mapping=None, shape='o'):
+        super().__init__(data, mapping)
+        self.shape = shape
+
+    def draw(self, plot):
+        for x, y in plot.data_scaled:
+            plot.canvas[y][x] = self.shape
+
+
+class geom_path(Layer):
+    def __init__(self, data=None, mapping=None):
+        super().__init__(data, mapping)
+
+    def draw(self, plot):
+
+        def plot_line(x0, y0, x1, y1):
+            """ Plot line using Bresenham algorithm. Yields (x, y). """
+            if x0 > x1:  # always draw left to right
+                x0, x1 = x1, x0
+                y0, y1 = y1, y0
+            dx = x1 - x0
+            dy = y1 - y0
+            axes_swapped = False
+            if abs(dy) > abs(dx):  # ensure slope is not >1
+                axes_swapped = True
+                x0, y0, x1, y1 = y0, x0, y1, x1
+                dx = x1 - x0
+                dy = y1 - y0
+            yi = 1
+            if dy < 0:  # switch sign of slope
+                yi = -1
+                dy = -dy
+            D = 2*dy - dx
+            y = y0
+
+            for x in range(x0, x1+1):
+                yield (y, x) if axes_swapped else (x, y)
+                if D > 0:
+                    y += yi
+                    D -= 2*dx
+                D += 2*dy
+
+        x0, y0 = next(plot.data_scaled)
+        for x1, y1 in plot.data_scaled:
+            for x, y in plot_line(x0, y0, x1, y1):
+                plot.canvas[y][x] = 'o'
+            x0, y0 = x1, y1
+
+
+plot = Plot(data=dataset, mapping=aes(
+    x='A', y='C', shape='D'), width=64, height=32)
+plot += geom_path()
+plot += geom_point(shape='+')
+plot.draw()
