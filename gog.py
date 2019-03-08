@@ -15,37 +15,73 @@ def aes(x=None, y=None, color=None, shape=None, label=None):
     return {'x': x, 'y': y, 'color': color, 'shape': shape, 'label': label}
 
 
-def linear_scale(plot):
-    X = plot.data[plot.mapping['x']]
-    Y = plot.data[plot.mapping['y']]
-    X_min = min(X)
-    Y_min = min(Y)
-    X_range = max(X) - X_min
-    Y_range = max(Y) - Y_min
+def linear_scale(V1, V2, W1, W2):
+    """ Returns transform function from vector space V to vector space W. """
+    V_range = V2 - V1
+    W_range = W2 - W1
 
-    def scale(x, y):
-        x = (plot.width-1)*(x-X_min)/X_range
-        y = (plot.height-1)*(y-Y_min)/Y_range
-        return int(round(x)), -int(round(y))-1
+    def scale(x):
+        return W_range*(x-V1)/V_range+W1
     return scale
 
+# def linear_scale(plot):
+#     X = plot.data[plot.mapping['x']]
+#     Y = plot.data[plot.mapping['y']]
+#     X_min = min(X)
+#     Y_min = min(Y)
+#     X_range = max(X) - X_min
+#     Y_range = max(Y) - Y_min
 
-_scales = {'linear': linear_scale}
+#     def scale(x, y):
+#         x = (plot.width-1)*(x-X_min)/X_range
+#         y = (plot.height-1)*(y-Y_min)/Y_range
+#         return int(round(x)), -int(round(y))-1
+#     return scale
+
+# continuous: float
+# discrete: int
+# nominal: str
+# dichotomous: bool
+
+
+scales = {'linear': linear_scale}
 
 
 class Plot:
-    def __init__(self, data=None, mapping=None, scale='linear', width=16, height=9):
-        self.width = width
-        self.height = height
-        self.canvas = [['.' for w in range(width)] for h in range(height)]
+    def __init__(self, data=None, mapping=None, scale=scales['linear'], width=16, height=9):
         self.layers = []
-        self.mapping = mapping
 
-        self.data = data
+        # 1. Data and mapping
+        X, Y = data[mapping['x']], data[mapping['y']]
+        X_min, X_max = min(X), max(X)
+        Y_min, Y_max = min(Y), max(Y)
 
-        self.scale = _scales[scale](self)
-        self.data_scaled = (self.scale(x, y) for x, y in zip(
-            self.data[mapping['x']], self.data[mapping['y']]))
+        # 2. Aesthetics and scales
+        plot_w = width
+        plot_h = height
+        self.canvas = canvas = [
+            ['.' for w in range(plot_w)] for h in range(plot_h)]
+
+        x_margin = 1
+        y_scale = scale(Y_min, Y_max, -x_margin-1, -height)
+        y_labels = (Y_min, Y_max)
+        y_ticks = [int(y_scale(y)) for y in y_labels]
+        y_labels = [str(l) for l in y_labels]
+        # max length of y_label strings
+        y_margin = max((len(l) for l in y_labels))
+        print(X_min, X_max, y_margin, width-1)
+        x_scale = scale(X_min, X_max, y_margin, width-1)
+        x_labels = (X_min, X_max)
+        x_ticks = [int(x_scale(x)) for x in x_labels]
+        x_labels = [str(l) for l in x_labels]
+
+        for tick, label in zip(x_ticks, x_labels):
+            for i, x in enumerate(range(tick, tick+len(label))):
+                canvas[-1][x] = label[i]
+
+        for tick, label in zip(y_ticks, y_labels):
+            for i, x in enumerate(range(len(label))):
+                canvas[tick][x] = label[i]
 
     def __add__(self, layer):
         assert(isinstance(layer, Layer))
@@ -117,6 +153,6 @@ class geom_path(Layer):
 
 plot = Plot(data=dataset, mapping=aes(
     x='A', y='C', shape='D'), width=64, height=32)
-plot += geom_path()
-plot += geom_point(shape='+')
+# plot += geom_path()
+# plot += geom_point(shape='+')
 plot.draw()
