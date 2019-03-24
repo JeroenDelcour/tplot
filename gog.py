@@ -7,15 +7,17 @@
 # nominal: str
 # dichotomous: bool
 
-import pandas as pd
+import math
+from bisect import bisect
 from itertools import repeat
 
-dataset = pd.DataFrame({
-    'A': [2, 1, 6, 4, 5],
-    'B': [3, 2, 3, 5, 10],
-    'C': [7, 1, 5, 15, -5],
-    'D': ['a', 'a', 'a', 'b', 'b']
-})
+
+dataset = {
+    'Aardvark': [2, 1, 6, 4, 5],
+    'Betadine': [3, 2, 3, 5, 10],
+    'Cylindrical': [7, 1, 5, 15, -5],
+    'Dirk': ['a', 'a', 'a', 'b', 'b']
+}
 
 
 def linear_scale(V1, V2, W1, W2):
@@ -81,7 +83,7 @@ def geom_path(canvas, scaled_data):
 
 aes_defaults = {'x': 0,
                 'y': 0,
-                'marker': "+"}
+                'marker': "\u2022"}
 
 
 def aes(x=None,
@@ -95,44 +97,76 @@ def aes(x=None,
 class Plot:
     def __init__(self, data, mapping, scale='linear', width=64, height=32):
 
+        def best_ticks(min_, max_, most):
+            # find step size
+            range_ = max_ - min_
+            min_step = range_ / most
+            magnitude = 10 ** math.floor(math.log(min_step, 10))
+            residual = min_step / magnitude
+            possible_steps = [1, 2, 5, 10]
+            step = possible_steps[bisect(
+                possible_steps, residual)] if residual < 10 else 10
+            step *= magnitude
+            # generate ticks
+            sign = math.copysign(1, min_)
+            start = step * math.floor(abs(min_) / step) * sign
+            return [start+i*step for i in range(int((range_)/step))]
+
         def y_aesthetics(canvas, data, height, scale_gen):
             Y_min, Y_max = min(data['y']), max(data['y'])
-            y_scale = scale_gen(Y_min, Y_max, -2, -height)
-            y_labels = (Y_min, Y_max)
+            y_scale = scale_gen(Y_min, Y_max, -3, -height)
+            y_labels = best_ticks(Y_min, Y_max, most=int((height-2)/2))
             y_ticks = [int(y_scale(y)) for y in y_labels]
-            y_labels = [str(l) for l in y_labels]
+            y_labels = ['{:.6g}'.format(l) for l in y_labels]
             # max length of y label strings
-            y_margin = max((len(l) for l in y_labels))
-            return y_scale, y_ticks, y_labels, y_margin
+            margin_left = max((len(l) for l in y_labels)) + 1
+            return y_scale, y_ticks, y_labels, margin_left
 
-        def x_aesthetics(canvas, data, width, scale_gen, y_margin):
+        def x_aesthetics(canvas, data, width, scale_gen, margin_left):
             X_min, X_max = min(data['x']), max(data['x'])
-            x_scale = scale_gen(X_min, X_max, y_margin, width-1)
-            x_labels = (X_min, X_max)
+            x_scale = scale_gen(X_min, X_max, margin_left, width-1)
+            x_labels = best_ticks(
+                X_min, X_max, most=int((width-margin_left)/(6+1)))
             x_ticks = [int(x_scale(x)) for x in x_labels]
-            x_labels = [str(l) for l in x_labels]
+            x_labels = ['{:.6g}'.format(l) for l in x_labels]
             return x_scale, x_ticks, x_labels
 
-        def draw_axes(canvas, y_margin):
-            for y in range(0, len(canvas)-2):  # x axis
-                canvas[y][y_margin] = "\u2502"
-            for x in range(y_margin+1, len(canvas[0])):  # y axis
-                canvas[-2][x] = "\u2500"
-            canvas[-2][y_margin] = "\u253C"  # origin
+        def draw_axes(canvas, margin_left):
+            for y in range(0, len(canvas)-3):  # y axis
+                canvas[y][margin_left] = "\u2502"
+            for x in range(margin_left+1, len(canvas[0])):  # x axis
+                canvas[-3][x] = "\u2500"
+            canvas[-3][margin_left] = "\u253C"  # origin
             return canvas
 
         def draw_x_ticks(canvas, ticks, labels):
             for tick, label in zip(ticks, labels):
+                canvas[-3][tick] = "\u252C"
                 for i, x in enumerate(range(tick, tick+len(label))):
-                    canvas[-1][x] = label[i]
-                    canvas[-2][x] = "\u252C"
+                    canvas[-2][x] = label[i]
             return canvas
 
-        def draw_y_ticks(canvas, ticks, labels, y_margin):
+        def draw_y_ticks(canvas, ticks, labels, margin_left):
             for tick, label in zip(ticks, labels):
                 for i, x in enumerate(range(len(label))):
-                    canvas[tick][x] = label[i]
-                    canvas[tick][y_margin] = "\u2524"
+                    canvas[tick][x+margin_left-len(label)] = label[i]
+                    canvas[tick][margin_left] = "\u2524"
+            return canvas
+
+        def draw_y_axis_label(canvas, label):
+            height = len(canvas)-1
+            center = int(height/2)
+            start = center - int(len(label)/2)
+            for l, y in zip(label, range(start, start+len(label)+1)):
+                canvas[y][0] = l
+            return canvas
+
+        def draw_x_axis_label(canvas, label, margin_left):
+            width = len(canvas[0]) - margin_left
+            center = int(width/2)
+            start = center - int(len(label)/2)
+            for l, x in zip(label, range(start, start+len(label)+1)):
+                canvas[-1][x] = l
             return canvas
 
         def map_aes(data, mapping, defaults):
@@ -150,18 +184,21 @@ class Plot:
 
         # aesthetics order:
         # 1. marker/color/etc. (anything that needs a legend)
-        # 2. y
+        # 2. y (to determine margin_left, since margin_right is fixed)
         # 3. x
 
         scales = {'marker': lambda v: v}
-        scales['y'], y_ticks, y_labels, y_margin = y_aesthetics(
+        scales['y'], y_ticks, y_labels, margin_left = y_aesthetics(
             canvas, data, height, scale_gens[scale])
         scales['x'], x_ticks, x_labels = x_aesthetics(
-            canvas, data, width, scale_gens[scale], y_margin)
+            canvas, data, width, scale_gens[scale], margin_left)
 
-        canvas = draw_axes(canvas, y_margin)
+        canvas = draw_axes(canvas, margin_left)
         canvas = draw_x_ticks(canvas, x_ticks, x_labels)
-        canvas = draw_y_ticks(canvas, y_ticks, y_labels, y_margin)
+        canvas = draw_y_ticks(canvas, y_ticks, y_labels, margin_left)
+        canvas[-3][margin_left] = "\u253C"  # draw origin
+        canvas = draw_y_axis_label(canvas, mapping['y'])
+        canvas = draw_x_axis_label(canvas, mapping['x'], margin_left)
 
         self.scaled_data = {dim: lambda s=scales[dim], d=data: map(s, d)
                             for dim, data in data.items()}
@@ -175,4 +212,5 @@ class Plot:
         return '\n'.join((''.join(row) for row in self.canvas))
 
 
-Plot(data=dataset, mapping=aes(x='A', y='C', marker='D')) + geom_path
+print(Plot(data=dataset, mapping=aes(x='Aardvark',
+                                     y='Cylindrical', marker=None)) + geom_path)
