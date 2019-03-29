@@ -11,12 +11,12 @@ dataset = {
     'Aardvark': [2, 1, 6, 4, 5],
     'Betadine': [3, 2, 3, 5, 10],
     'Cylindrical': [7, 1, 5, 15, -5],
-    'Dirk': ['aantonend', 'afstoten', 'aardig', 'bij', 'bezig']
+    'Dirk': ['appel', 'appelbomen', 'appelboom', 'bijen', 'bij']
 }
 
 
 def generate_scale(data, W1, W2):
-    def linear(data, W1, W2):
+    def linear2linear(data, W1, W2):
         """ Returns transform function from vector space V to vector space W. """
         V1 = min(data)
         V2 = max(data)
@@ -26,34 +26,34 @@ def generate_scale(data, W1, W2):
         if V_range == 0:
             return lambda: W1
 
-        def linear(v):
+        def linear2linear(v):
             try:
                 return (W_range*(vi-V1)/V_range+W1 for vi in v)
             except:
                 return W_range*(v-V1)/V_range+W1
-        return linear
+        return linear2linear
 
-    def discrete(data, W1, W2):
+    def discrete2linear(data, W1, W2):
         s = sorted(set(data))
         if abs(W2-W1) <= len(s):
             sign = +1 if W2 >= W1 else -1
             d = {v: W1+i*sign for i, v in enumerate(s)}
         else:
-            linear_scaler = linear(range(len(s)), W1, W2)
+            linear_scaler = linear2linear(range(-1, len(s)+1), W1, W2)
             d = {v: linear_scaler(i) for i, v in enumerate(s)}
 
-        def discrete(v):
+        def discrete2linear(v):
             return d[v]
-        return discrete
+        return discrete2linear
 
     try:
-        return linear(data, W1, W2)
+        return linear2linear(data, W1, W2)
     except TypeError:
-        return discrete(data, W1, W2)
+        return discrete2linear(data, W1, W2)
 
 
 def geom_point(marker=None):
-    def geom_point_fn(canvas, scaled_data, margin_left, marker=marker):
+    def geom_point_fn(canvas, scaled_data, margins, marker=marker):
         for x, y, m in zip(scaled_data['x'](), scaled_data['y'](), scaled_data['marker']()):
             canvas[int(y)][int(x)] = m if not marker else marker
         return canvas
@@ -89,7 +89,7 @@ def geom_path(marker=None):
                 D -= 2*dx
             D += 2*dy
 
-    def geom_path_fn(canvas, scaled_data, margin_left, marker=marker):
+    def geom_path_fn(canvas, scaled_data, margins, marker=marker):
         X, Y = scaled_data['x'](), scaled_data['y']()
         x0, y0 = next(X), next(Y)
         for x1, y1, m in zip(X, Y, scaled_data['marker']()):
@@ -101,22 +101,59 @@ def geom_path(marker=None):
     return geom_path_fn
 
 
-def geom_bar(orientation='vertical'):
-    def geom_bar_fn(canvas, scaled_data, margin_left):
-        for x, y in zip(scaled_data['x'](), scaled_data['y']()):
-            if orientation == 'vertical':
-                canvas[-3][int(x)] = "\u2580"
-                for yi in range(int(y), -3):
-                    canvas[yi][int(x)] = "\u2588"
-            elif orientation == 'horizontal':
-                canvas[int(y)][margin_left] = "\u2590"
-                for xi in range(margin_left+1, int(x)):
-                    canvas[int(y)][xi] = "\u2588"
-            else:
-                raise NotImplementedError(
-                    "Orientation '{}' has not been implemented.".format(orientation))
+def geom_bar(orientation='vertical', marker=None):
+    def geom_bar_horizontal(canvas, data, scales, margins):
+        for x, y in zip(data['x'], data['y']):
+            x_s = scales['x'](x)
+            y_s = scales['y'](y)
+            try:  # continuous
+                if x >= 0:
+                    start = int(max(margins['left']+1, scales['x'](0)))
+                    end = int(x_s)
+                else:
+                    start = int(x_s)
+                    end = int(
+                        min(len(canvas[0])-margins['right'], scales['x'](0)))
+            except TypeError:  # discrete
+                start = margins['left']
+                end = int(x_s)
+            # start and end caps
+            canvas[int(y_s)][start] = "\u2590" if not marker else marker
+            canvas[int(y_s)][end] = "\u258C" if not marker else marker
+            # middle section
+            for xi in range(start+1, end):
+                canvas[int(y_s)][xi] = "\u2588" if not marker else marker
         return canvas
-    return geom_bar_fn
+
+    def geom_bar_vertical(canvas, data, scales, margins):
+        for x, y in zip(data['x'], data['y']):
+            x_s = scales['x'](x)
+            y_s = scales['y'](y)
+            try:  # continuous
+                if y >= 0:
+                    start = int(y_s)
+                    end = int(min(-margins['bottom'], scales['y'](0)))
+                else:
+                    start = int(max(-len(canvas), scales['y'](0)))
+                    end = int(y_s)
+            except TypeError:  # discrete
+                start = int(y_s)
+                end = -margins['bottom']
+            # start and end caps
+            canvas[start][int(x_s)] = "\u2584" if not marker else marker
+            canvas[end][int(x_s)] = "\u2580" if not marker else marker
+            # middle section
+            for yi in range(start+1, end):
+                canvas[yi][int(x_s)] = "\u2588" if not marker else marker
+        return canvas
+
+    if orientation == 'vertical':
+        return geom_bar_vertical
+    elif orientation == 'horizontal':
+        return geom_bar_horizontal
+    else:
+        raise NotImplementedError(
+            "Orientation '{}' has not been implemented.".format(orientation))
 
 
 aes_defaults = {'x': 0,
@@ -154,13 +191,13 @@ class Plot:
 
         def y_aesthetics(data, height):
             y_scale = generate_scale(data['y'], -3, -height)
-            if y_scale.__name__ == "discrete":
+            if y_scale.__name__ == "discrete2linear":
                 y_labels = set(data['y'])
             else:
                 y_labels = best_ticks(min(data['y']), max(
                     data['y']), most=int((height-2)/2))
             y_ticks = [int(y_scale(y)) for y in y_labels]
-            if y_scale.__name__ != "discrete":
+            if y_scale.__name__ != "discrete2linear":
                 y_labels = ['{:.6g}'.format(l) for l in y_labels]
             # max length of y label strings
             margin_left = max((len(l) for l in y_labels)) + 2
@@ -169,13 +206,13 @@ class Plot:
         def x_aesthetics(data, width, margin_left):
             x_scale = generate_scale(
                 data['x'], margin_left, width-1)
-            if x_scale.__name__ == "discrete":
+            if x_scale.__name__ == "discrete2linear":
                 x_labels = set(data['x'])
             else:
                 x_labels = best_ticks(
                     min(data['x']), max(data['x']), most=int((width-margin_left)/(6+1)))
             x_ticks = [int(x_scale(x)) for x in x_labels]
-            if x_scale.__name__ != "discrete":
+            if x_scale.__name__ != "discrete2linear":
                 x_labels = ['{:.6g}'.format(l) for l in x_labels]
             return x_scale, x_ticks, x_labels
 
@@ -234,58 +271,62 @@ class Plot:
         data = map_aes(data, mapping, aes_defaults)
         scales = {dim: lambda v: v for dim in (
             'x', 'y', 'marker')}  # identity functions
+        margins = {'left': 0, 'bottom': 3, 'top': 0, 'right': 0}
 
         # aesthetics order:
         # 1. marker/color/etc. (anything that needs a legend)
         # 2. y (to determine margin_left, since margin_right is fixed)
         # 3. x
 
-        margin_left = 0
+        if mapping['marker']:
+            pass
+
         if mapping['y']:
-            scales['y'], y_ticks, y_labels, margin_left = y_aesthetics(
+            scales['y'], y_ticks, y_labels, margins['left'] = y_aesthetics(
                 data, height)
-            if scales['y'].__name__ == "discrete_scaler":
-                # resize plot to fit
-                min_scale_height = -scales['y'](max(data['y']))
+            if scales['y'].__name__ == "discrete2linear":
+                # resize plot to fit if needed
                 min_y_label_height = len(mapping['y'])+1
-                height = max(min_scale_height, min_y_label_height)
+                height = max(height, min_y_label_height)
         else:
             height = 4
 
         if mapping['x']:
             scales['x'], x_ticks, x_labels = x_aesthetics(
-                data, width, margin_left)
+                data, width, margins['left'])
         else:
-            width = margin_left + 2
-            scales['x'] = lambda x: margin_left + 1
+            width = margins['left'] + 2
+            scales['x'] = lambda x: margins['left'] + 1
 
         canvas = [
             [' ' for w in range(width)] for h in range(height)]
 
-        canvas = draw_axes(canvas, margin_left)
+        canvas = draw_axes(canvas, margins['left'])
         if mapping['x']:
             canvas = draw_x_ticks(canvas, x_ticks, x_labels)
         if mapping['y']:
-            canvas = draw_y_ticks(canvas, y_ticks, y_labels, margin_left)
+            canvas = draw_y_ticks(canvas, y_ticks, y_labels, margins['left'])
         if mapping['x'] and mapping['y']:
-            canvas[-3][margin_left] = "\u253C"  # draw origin
+            canvas[-3][margins['left']] = "\u253C"  # draw origin
         if mapping['y']:
             canvas = draw_y_axis_label(canvas, mapping['y'])
         if mapping['x']:
-            canvas = draw_x_axis_label(canvas, mapping['x'], margin_left)
+            canvas = draw_x_axis_label(canvas, mapping['x'], margins['left'])
 
-        self.scaled_data = {dim: lambda s=scales[dim], d=data: map(s, d)
-                            for dim, data in data.items()}
+        # self.scaled_data = {dim: lambda s=scales[dim], d=data: map(s, d)
+        #                     for dim, data in data.items()}
+        self.data = data
+        self.scales = scales
         self.canvas = canvas
-        self.margin_left = margin_left
+        self.margins = margins
 
     def __add__(self, geom):
-        self.canvas = geom(self.canvas, self.scaled_data, self.margin_left)
+        self.canvas = geom(self.canvas, self.data, self.scales, self.margins)
         return self
 
     def __repr__(self):
         return '\n'.join((''.join(row) for row in self.canvas))
 
 
-print(Plot(dataset, aes(y='Cylindrical', x='Dirk')) +
-      geom_bar())
+print(Plot(dataset, aes(y='Cylindrical', x='Dirk', marker='Dirk')) +
+      geom_bar(orientation='vertical'))
