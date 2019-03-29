@@ -35,7 +35,7 @@ def generate_scale(data, W1, W2):
 
     def discrete(data, W1, W2):
         s = sorted(set(data))
-        if W2-W1 <= len(s):
+        if abs(W2-W1) <= len(s):
             sign = +1 if W2 >= W1 else -1
             d = {v: W1+i*sign for i, v in enumerate(s)}
         else:
@@ -53,7 +53,7 @@ def generate_scale(data, W1, W2):
 
 
 def geom_point(marker=None):
-    def geom_point_fn(canvas, scaled_data, marker=marker):
+    def geom_point_fn(canvas, scaled_data, margin_left, marker=marker):
         for x, y, m in zip(scaled_data['x'](), scaled_data['y'](), scaled_data['marker']()):
             canvas[int(y)][int(x)] = m if not marker else marker
         return canvas
@@ -89,7 +89,7 @@ def geom_path(marker=None):
                 D -= 2*dx
             D += 2*dy
 
-    def geom_path_fn(canvas, scaled_data, marker=marker):
+    def geom_path_fn(canvas, scaled_data, margin_left, marker=marker):
         X, Y = scaled_data['x'](), scaled_data['y']()
         x0, y0 = next(X), next(Y)
         for x1, y1, m in zip(X, Y, scaled_data['marker']()):
@@ -99,6 +99,24 @@ def geom_path(marker=None):
 
         return canvas
     return geom_path_fn
+
+
+def geom_bar(orientation='vertical'):
+    def geom_bar_fn(canvas, scaled_data, margin_left):
+        for x, y in zip(scaled_data['x'](), scaled_data['y']()):
+            if orientation == 'vertical':
+                canvas[-3][int(x)] = "\u2580"
+                for yi in range(int(y), -3):
+                    canvas[yi][int(x)] = "\u2588"
+            elif orientation == 'horizontal':
+                canvas[int(y)][margin_left] = "\u2590"
+                for xi in range(margin_left+1, int(x)):
+                    canvas[int(y)][xi] = "\u2588"
+            else:
+                raise NotImplementedError(
+                    "Orientation '{}' has not been implemented.".format(orientation))
+        return canvas
+    return geom_bar_fn
 
 
 aes_defaults = {'x': 0,
@@ -259,14 +277,15 @@ class Plot:
         self.scaled_data = {dim: lambda s=scales[dim], d=data: map(s, d)
                             for dim, data in data.items()}
         self.canvas = canvas
+        self.margin_left = margin_left
 
     def __add__(self, geom):
-        self.canvas = geom(self.canvas, self.scaled_data)
+        self.canvas = geom(self.canvas, self.scaled_data, self.margin_left)
         return self
 
     def __repr__(self):
         return '\n'.join((''.join(row) for row in self.canvas))
 
 
-print(Plot(dataset, aes(y='Aardvark', x='Dirk')) +
-      geom_point(marker='+'))
+print(Plot(dataset, aes(y='Cylindrical', x='Dirk')) +
+      geom_bar())
