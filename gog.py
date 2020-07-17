@@ -164,7 +164,7 @@ aes_defaults = {'x': 0,
 def aes(x=None,
         y=None,
         marker=None):
-    if all([dim == None for dim in locals().values()]):
+    if x is None and y is None and marker is None:
         raise ValueError('At least one aesthetic must be mapped to the data.')
     return locals()
 
@@ -258,9 +258,9 @@ class Plot:
 
         def map_aes(data, mapping, defaults):
             """ Indexes data by aesthetic, inserting default values. """
-            for v in mapping.values():
-                if v is not None and not v in data:
-                    raise KeyError("'{}' not in data".format(v))
+            # for v in mapping.values():
+            #     if v is not None and not v in data:
+            #         raise KeyError("'{}' not in data".format(v))
             dim_lengths = list(
                 map(len, (v for k, v in data.items() if v is not None)))
             if not dim_lengths.count(dim_lengths[0]) == len(dim_lengths):

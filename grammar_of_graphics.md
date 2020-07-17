@@ -1,0 +1,4 @@
+- map data to "aesthetics" (x, y, markers, color, etc.)
+- scale data to fit on the screen, or map to marker or color
+- generate axes and legends
+- generate plot background and title
