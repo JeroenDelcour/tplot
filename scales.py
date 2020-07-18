@@ -6,7 +6,7 @@ class Scale:
         pass
 
     def transform(self, values):
-        if isinstance(values, Number):
+        if isinstance(values, Number) or isinstance(values, str):
             return self._transform([values])[0]
         else:
             return self._transform(values)
