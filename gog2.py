@@ -1,96 +1,7 @@
 from colorama import init
 from numbers import Number
-from bisect import bisect
-import math
-
-
-def plot_line_segment(x0, y0, x1, y1):
-    """ Plot line segment using Bresenham algorithm. Yields (x, y). """
-    dx = x1 - x0
-    dy = y1 - y0
-    axes_swapped = False
-    if abs(dy) > abs(dx):  # ensure slope is not >1
-        axes_swapped = True
-        x0, y0, x1, y1 = y0, x0, y1, x1
-    if x0 > x1:  # always draw left to right
-        x0, x1 = x1, x0
-        y0, y1 = y1, y0
-    dx = x1 - x0
-    dy = y1 - y0
-    yi = 1
-    if dy < 0:  # switch sign of slope
-        yi = -1
-        dy = -dy
-    D = 2*dy - dx
-    y = y0
-
-    for x in range(x0, x1+1):
-        yield (y, x) if axes_swapped else (x, y)
-        if D > 0:
-            y += yi
-            D -= 2*dx
-        D += 2*dy
-
-
-def best_ticks(min_, max_, most):
-    # find step size
-    range_ = max_ - min_
-    if range_ == 0:
-        return [min_]
-    min_step = range_ / most
-    magnitude = 10 ** math.floor(math.log(min_step, 10))
-    residual = min_step / magnitude
-    possible_steps = [1, 2, 5, 10]
-    step = possible_steps[bisect(
-        possible_steps, residual)] if residual < 10 else 10
-    step *= magnitude
-    # generate ticks
-    sign = math.copysign(1, min_)
-    start = step * math.floor(abs(min_) / step) * sign
-    return [start+i*step for i in range(int((max_-start)/step)+1)]
-
-
-class Scale:
-    def __init__(self):
-        pass
-
-    def transform(self, values):
-        raise NotImplementedError
-
-
-class LinearScale(Scale):
-    """Transforms real values to real values linearly."""
-
-    def __init__(self):
-        super().__init__()
-
-    def fit(self, values, target_min, target_max):
-        original_min = min(values)
-        original_max = max(values)
-        original_range = original_max - original_min
-        target_range = target_max - target_min
-
-        def transform(values):
-            return [target_range * (value - original_min) / original_range + target_min for value in values]
-        self.transform = transform
-
-
-class NominalScale(Scale):
-    """Maps unique values to real values."""
-
-    def __init__(self):
-        super().__init__()
-
-    def fit(self, values, target_min=0, target_max=None):
-        idxmap = {value: i for i, value in enumerate(sorted(set(values)))}
-        if target_max is not None and target_max > len(idxmap):
-            scale = LinearScale()
-            scale.fit(list(idxmap.values()), target_min, target_max)
-            idxmap = {value: scale.transform([i])[0] for value, i in idxmap.items()}
-
-        def transform(values):
-            return [idxmap[value] for value in values]
-        self.transform = transform
+from utils import *
+from scales import *
 
 
 class Figure:
@@ -106,7 +17,7 @@ class Figure:
             self._xscale = LinearScale()
         else:
             self._xscale = NominalScale()
-        if all([isinstance(value, Number) for value in self.x]):
+        if all([isinstance(value, Number) for value in self.y]):
             self._yscale = LinearScale()
         else:
             self._yscale = NominalScale()
@@ -151,13 +62,13 @@ class Figure:
             x_axis += "\n" + x_axis_label
         return x_axis
 
-    def scatterplot(self, marker="o"):
+    def scatter(self, marker="o"):
         xs = self._xscale.transform(self.x)
         ys = self._yscale.transform(self.y)
         for x, y in zip(xs, ys):
             self.canvas[int(-y)-1][int(x)] = marker
 
-    def lineplot(self, marker="o"):
+    def line(self, marker="o"):
         xs = [int(x) for x in self._xscale.transform(self.x)]
         ys = [int(y) for y in self._yscale.transform(self.y)]
         for (x0, x1), (y0, y1) in zip(zip(xs[:-1], xs[1:]), zip(ys[:-1], ys[1:])):
