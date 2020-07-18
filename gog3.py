@@ -126,7 +126,7 @@ class Figure:
 
     def scatter(self, marker="o"):
         for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
-            self.canvas[round(-y)-1, round(x)] = marker
+            self.canvas[-round(y)-1, round(x)] = marker
 
     def line(self, marker="*"):
         xs = self._xscale.transform(self.x)
@@ -138,14 +138,12 @@ class Figure:
     def bar(self, marker="#"):
         bottom = self._yscale.transform(min(self.y))
         for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
-            for yi in range(int(bottom), round(y)):
-                self.canvas[-yi-1, round(x)] = marker
+            self.canvas[-round(y)-1:-int(bottom), round(x)] = marker
 
     def hbar(self, marker="#"):
         start = self._xscale.transform(min(self.x))
         for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
-            for xi in range(int(start), round(x)):
-                self.canvas[-round(y)-1, xi] = marker
+            self.canvas[-round(y)-1, int(start):round(x)] = marker
 
     def __repr__(self):
         return "\n".join(["".join(row) for row in self.canvas.tolist()])

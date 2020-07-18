@@ -1,4 +1,5 @@
 from gog3 import *
+import timeit
 
 anscombeA = [
     [10, 8, 13, 9, 11, 14, 6, 4, 12, 7, 5],
@@ -8,7 +9,7 @@ anscombeA = [
 anscombeA = list(zip(*[(x, y) for x, y in sorted(zip(*anscombeA))]))
 
 fig = Figure(x=anscombeA[0], y=anscombeA[1], xlabel="x label", ylabel="y label", title="Anscombe I")
+fig.bar()
 fig.line(marker="*")
 fig.scatter(marker="o")
-# fig.bar()
 fig.show()
