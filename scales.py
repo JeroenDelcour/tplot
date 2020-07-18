@@ -1,8 +1,17 @@
+from numbers import Number
+
+
 class Scale:
     def __init__(self):
         pass
 
     def transform(self, values):
+        if isinstance(values, Number):
+            return self._transform([values])[0]
+        else:
+            return self._transform(values)
+
+    def _transform(self, values):
         raise NotImplementedError
 
 
@@ -18,9 +27,9 @@ class LinearScale(Scale):
         original_range = original_max - original_min
         target_range = target_max - target_min
 
-        def transform(values):
+        def _transform(values):
             return [target_range * (value - original_min) / original_range + target_min for value in values]
-        self.transform = transform
+        self._transform = _transform
 
 
 class NominalScale(Scale):
@@ -36,6 +45,6 @@ class NominalScale(Scale):
             scale.fit(list(idxmap.values()), target_min, target_max)
             idxmap = {value: scale.transform([i])[0] for value, i in idxmap.items()}
 
-        def transform(values):
+        def _transform(values):
             return [idxmap[value] for value in values]
-        self.transform = transform
+        self._transform = _transform
