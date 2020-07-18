@@ -32,7 +32,8 @@ class Figure:
             scale = LinearScale()
         else:
             scale = NominalScale()
-        scale.fit(self.y, target_min=self._xax_height - bool(self.xlabel), target_max=self.height-1 - bool(self.title))
+        scale.fit(self.y, target_min=self._xax_height - bool(self.xlabel) +
+                  1, target_max=self.height-1 - bool(self.title))
         return scale
 
     @cached_property
@@ -41,7 +42,7 @@ class Figure:
             scale = LinearScale()
         else:
             scale = NominalScale()
-        scale.fit(self.x, target_min=self._yax_width-1, target_max=self.width-1)
+        scale.fit(self.x, target_min=self._yax_width, target_max=self.width-1)
         return scale
 
     @property
@@ -74,8 +75,8 @@ class Figure:
         if isinstance(self._yscale, NominalScale):
             return set(self.y)  # note this may not fit depending on the height of the figure
         else:
-            start = int(self._yscale.transform(min(self.y)))
-            end = int(self._yscale.transform(max(self.y)))
+            start = round(self._yscale.transform(min(self.y)))
+            end = round(self._yscale.transform(max(self.y)))
             return best_ticks(min(self.y), max(self.y), most=(end-start) // 2)
 
     @cached_property
@@ -83,16 +84,16 @@ class Figure:
         if isinstance(self._xscale, NominalScale):
             return set(self.x)  # note this may not fit dependong on the width of the figure
         else:
-            start = int(self._xscale.transform(min(self.x)))
-            end = int(self._xscale.transform(max(self.x)))
+            start = round(self._xscale.transform(min(self.x)))
+            end = round(self._xscale.transform(max(self.x)))
             return best_ticks(min(self.x), max(self.x), most=(end-start) // self.xticklabel_length)
 
     def _draw_y_axis(self):
-        start = int(self._yscale.transform(min(self.y)))
-        end = int(self._yscale.transform(max(self.y)))
+        start = round(self._yscale.transform(min(self.y)))
+        end = round(self._yscale.transform(max(self.y)))
         self.canvas[-end-1:-start-1, self._yax_width-1] = "|"
         for value, pos in zip(self._ytick_values, self._yscale.transform(self._ytick_values)):
-            pos = int(pos)
+            pos = round(pos)
             label = str(value)
             self.canvas[end-pos, self._yax_width-1] = "+"
             self._rjust_draw(label, self.canvas[end-pos, bool(self.ylabel)*2:self._yax_width-1])
@@ -102,13 +103,13 @@ class Figure:
             self._center_draw(ylabel, self.canvas[start:end, 0])
 
     def _draw_x_axis(self):
-        start = int(self._xscale.transform(min(self.x)))
-        end = int(self._xscale.transform(max(self.x)))
+        start = round(self._xscale.transform(min(self.x)))
+        end = round(self._xscale.transform(max(self.x)))
         self.canvas[-self._xax_height, start:end] = "-"
         before = self.xticklabel_length // 2
         after = self.xticklabel_length - before
         for value, pos in zip(self._xtick_values, self._xscale.transform(self._xtick_values)):
-            pos = int(pos)
+            pos = round(pos)
             label = str(value)
             self.canvas[-self._xax_height, pos] = "+"
             if pos == start:  # left-adjust first ticklabel
@@ -125,14 +126,26 @@ class Figure:
 
     def scatter(self, marker="o"):
         for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
-            self.canvas[int(-y)-1, int(x)] = marker
+            self.canvas[round(-y)-1, round(x)] = marker
 
     def line(self, marker="*"):
         xs = self._xscale.transform(self.x)
         ys = self._yscale.transform(self.y)
         for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
-            for x, y in plot_line_segment(int(x0), int(y0), int(x1), int(y1)):
+            for x, y in plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
                 self.canvas[-y-1, x] = marker
+
+    def bar(self, marker="#"):
+        bottom = self._yscale.transform(min(self.y))
+        for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
+            for yi in range(int(bottom), round(y)):
+                self.canvas[-yi-1, round(x)] = marker
+
+    def hbar(self, marker="#"):
+        start = self._xscale.transform(min(self.x))
+        for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
+            for xi in range(int(start), round(x)):
+                self.canvas[-round(y)-1, xi] = marker
 
     def __repr__(self):
         return "\n".join(["".join(row) for row in self.canvas.tolist()])
