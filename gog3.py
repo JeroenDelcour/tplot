@@ -32,7 +32,7 @@ class Figure:
             scale = LinearScale()
         else:
             scale = NominalScale()
-        scale.fit(self.y, target_min=self._xax_height-1, target_max=self.height-1 - bool(self.title))
+        scale.fit(self.y, target_min=self._xax_height - bool(self.xlabel), target_max=self.height-1 - bool(self.title))
         return scale
 
     @cached_property
@@ -46,7 +46,7 @@ class Figure:
 
     @property
     def _xax_height(self):
-        return 3
+        return 2 + bool(self.xlabel)
 
     @cached_property
     def _yax_width(self):
@@ -55,7 +55,10 @@ class Figure:
         depends on the length of the labels, which themselves depend on the data.
         """
         labels = (str(value) for value in self._ytick_values)
-        return max([len(label) for label in labels]) + 2 + 1  # 2 for axis label, 1 for axis ticks
+        width = max([len(label) for label in labels])
+        width += 1  # for axis ticks
+        width += bool(self.ylabel) * 2  # for y label
+        return width
 
     def _center_draw(self, string, array, fillchar=" "):
         array[:] = np.array(list(string.center(len(array), fillchar)))
@@ -91,8 +94,8 @@ class Figure:
         for value, pos in zip(self._ytick_values, self._yscale.transform(self._ytick_values)):
             pos = int(pos)
             label = str(value)
-            self.canvas[end-pos-1, self._yax_width-1] = "+"
-            self._rjust_draw(label, self.canvas[end-pos-1, 2:self._yax_width-1])
+            self.canvas[end-pos, self._yax_width-1] = "+"
+            self._rjust_draw(label, self.canvas[end-pos, bool(self.ylabel)*2:self._yax_width-1])
 
         if self.ylabel:
             ylabel = self.ylabel[:end-start]  # make sure it fits
@@ -101,19 +104,20 @@ class Figure:
     def _draw_x_axis(self):
         start = int(self._xscale.transform(min(self.x)))
         end = int(self._xscale.transform(max(self.x)))
-        self.canvas[-3, start:end] = "-"
+        self.canvas[-self._xax_height, start:end] = "-"
         before = self.xticklabel_length // 2
         after = self.xticklabel_length - before
         for value, pos in zip(self._xtick_values, self._xscale.transform(self._xtick_values)):
             pos = int(pos)
             label = str(value)
-            self.canvas[-3, pos] = "+"
+            self.canvas[-self._xax_height, pos] = "+"
             if pos == start:  # left-adjust first ticklabel
-                self._ljust_draw(label[:after], self.canvas[-2, pos:pos+after])
+                self._ljust_draw(label[:after], self.canvas[-self._xax_height+1, pos:pos+after])
             elif pos == end:  # right-adjust last ticklabel
-                self._rjust_draw(label[:before+1], self.canvas[-2, pos-before:pos+1])
+                self._rjust_draw(label[:before+1], self.canvas[-self._xax_height+1, pos-before:pos+1])
             else:  # center other ticklabels
-                self._center_draw(label[:self.xticklabel_length], self.canvas[-2, pos-before:pos+after])
+                self._center_draw(label[:self.xticklabel_length],
+                                  self.canvas[-self._xax_height+1, pos-before:pos+after])
 
         if self.xlabel:
             xlabel = self.xlabel[:end-start]  # make sure it fits
