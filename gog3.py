@@ -8,15 +8,18 @@ from utils import *
 
 
 class Figure:
-    def __init__(self, xlabel=None, ylabel=None, title=None, width=64, height=21, xticklabel_length=7):
+    def __init__(self, xlabel=None, ylabel=None, title=None, width=64, height=21, xticklabel_length=7, legendloc="topright"):
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title
         self.width = width
         self.height = height
         self.xticklabel_length = xticklabel_length
+        self.legendloc = legendloc
 
-        self._plots = []  # gather stuff to plot before actually plotting
+        # gather stuff to plot before actually drawing it
+        self._plots = []
+        self._labels = []
 
     @property
     def x(self):
@@ -62,13 +65,13 @@ class Figure:
         return width
 
     def _center_draw(self, string, array, fillchar=" "):
-        array[:] = np.array(list(string.center(len(array), fillchar)))
+        array[:] = list(string.center(len(array), fillchar))
 
     def _ljust_draw(self, string, array, fillchar=" "):
-        array[:] = np.array(list(string.ljust(len(array), fillchar)))
+        array[:] = list(string.ljust(len(array), fillchar))
 
     def _rjust_draw(self, string, array, fillchar=" "):
-        array[:] = np.array(list(string.rjust(len(array), fillchar)))
+        array[:] = list(string.rjust(len(array), fillchar))
 
     @cached_property
     def _ytick_values(self):
@@ -124,6 +127,26 @@ class Figure:
             xlabel = self.xlabel[:end-start]  # make sure it fits
             self._center_draw(xlabel, self.canvas[-1, start:end])
 
+    def _draw_legend(self):
+        labelstrings = [f"{marker} {label}" for label, marker in self._labels]
+        width = max([len(labelstring) for labelstring in labelstrings]) + 2
+        width = max(width, len("Legend") + 2)
+        height = len(labelstrings) + 2
+
+        if self.legendloc.startswith("top"):
+            top = -int(self._yscale.transform(max(self.y))) - 1
+        elif self.legendloc.startswith("bottom"):
+            top = -int(self._yscale.transform(min(self.y))) - height
+        if self.legendloc.endswith("right"):
+            left = int(self._xscale.transform(max(self.x))) - width + 1
+        elif self.legendloc.endswith("left"):
+            left = int(self._xscale.transform(min(self.x)))
+
+        self.canvas[top, left:left+width] = list("+" + "Legend".center(width-2, "-") + "+")
+        for i, labelstring in enumerate(labelstrings):
+            self.canvas[top+i+1, left:left+width] = list("|" + labelstring.ljust(width-2) + "|")
+        self.canvas[top+len(labelstrings)+1, left:left+width] = list("+" + "-"*(width-2) + "+")
+
     def draw(self):
         self.canvas = np.empty((self.height, self.width), dtype="U1")
         self.canvas[:] = " "
@@ -137,14 +160,22 @@ class Figure:
 
         for plot in self._plots:
             plot()
+        if self._labels:
+            self._draw_legend()
 
-    def scatter(self, x, y, marker="o"):
+    def scatter(self, x, y, marker="o", label=None):
+        marker = marker[0]
+
         def draw_scatter(x, y, marker):
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self.canvas[-round(yi)-1, round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
+        if label:
+            self._labels.append((label, marker))
 
-    def line(self, x, y, marker="*"):
+    def line(self, x, y, marker="*", label=None):
+        marker = marker[0]
+
         def draw_line(x, y, marker):
             xs = self._xscale.transform(x)
             ys = self._yscale.transform(y)
@@ -152,20 +183,30 @@ class Figure:
                 for x, y in plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
                     self.canvas[-y-1, x] = marker
         self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
+        if label:
+            self._labels.append((label, marker))
 
-    def bar(self, x, y, marker="#"):
+    def bar(self, x, y, marker="#", label=None):
+        marker = marker[0]
+
         def draw_bar(x, y, marker):
             bottom = self._yscale.transform(min(y))
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self.canvas[-round(yi)-1:-int(bottom), round(xi)] = marker
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
+        if label:
+            self._labels.append((label, marker))
 
-    def hbar(self, x, y, marker="#"):
+    def hbar(self, x, y, marker="#", label=None):
+        marker = marker[0]
+
         def draw_hbar(x, y, marker):
             start = self._xscale.transform(min(x))
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self.canvas[-round(yi)-1, int(start):round(xi)] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
+        if label:
+            self._labels.append((label, marker))
 
     def __repr__(self):
         self.draw()

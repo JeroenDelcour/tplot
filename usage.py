@@ -13,7 +13,7 @@ anscombeB = [
 anscombeA = list(zip(*[(x, y) for x, y in sorted(zip(*anscombeA))]))
 anscombeB = list(zip(*[(x, y) for x, y in sorted(zip(*anscombeB))]))
 
-fig = Figure(xlabel="x label", ylabel="y label", title="Anscombe I")
-fig.scatter(x=anscombeA[0], y=anscombeA[1])
-fig.line(*anscombeB)
+fig = Figure(xlabel="x label", ylabel="y label", title="Anscombe", legendloc="bottomright")
+fig.scatter(x=anscombeA[0], y=anscombeA[1], label="Anscombe I")
+fig.scatter(*anscombeB, label="Anscombe II", marker="+")
 fig.show()
