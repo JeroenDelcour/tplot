@@ -1,5 +1,5 @@
 from numbers import Number
-from functools import cached_property
+from functools import cached_property, partial
 from colorama import init
 import numpy as np
 
@@ -8,9 +8,7 @@ from utils import *
 
 
 class Figure:
-    def __init__(self, x=None, y=None, xlabel=None, ylabel=None, title=None, width=64, height=21, xticklabel_length=7):
-        self.x = x
-        self.y = y
+    def __init__(self, xlabel=None, ylabel=None, title=None, width=64, height=21, xticklabel_length=7):
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title
@@ -18,13 +16,15 @@ class Figure:
         self.height = height
         self.xticklabel_length = xticklabel_length
 
-        self.canvas = np.empty((height, width), dtype="U1")
-        self.canvas[:] = " "
-        self._draw_x_axis()
-        self._draw_y_axis()
-        if self.title:
-            title = self.title[:self.width]  # make sure it fits
-            self._center_draw(title, self.canvas[0, :])
+        self._plots = []  # gather stuff to plot before actually plotting
+
+    @property
+    def x(self):
+        return np.concatenate([plot.keywords["x"] for plot in self._plots])
+
+    @property
+    def y(self):
+        return np.concatenate([plot.keywords["y"] for plot in self._plots])
 
     @cached_property
     def _yscale(self):
@@ -124,28 +124,51 @@ class Figure:
             xlabel = self.xlabel[:end-start]  # make sure it fits
             self._center_draw(xlabel, self.canvas[-1, start:end])
 
-    def scatter(self, marker="o"):
-        for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
-            self.canvas[-round(y)-1, round(x)] = marker
+    def draw(self):
+        self.canvas = np.empty((self.height, self.width), dtype="U1")
+        self.canvas[:] = " "
 
-    def line(self, marker="*"):
-        xs = self._xscale.transform(self.x)
-        ys = self._yscale.transform(self.y)
-        for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
-            for x, y in plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
-                self.canvas[-y-1, x] = marker
+        if self.title:
+            title = self.title[:self.width]  # make sure it fits
+            self._center_draw(title, self.canvas[0, :])
 
-    def bar(self, marker="#"):
-        bottom = self._yscale.transform(min(self.y))
-        for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
-            self.canvas[-round(y)-1:-int(bottom), round(x)] = marker
+        self._draw_x_axis()
+        self._draw_y_axis()
 
-    def hbar(self, marker="#"):
-        start = self._xscale.transform(min(self.x))
-        for x, y in zip(self._xscale.transform(self.x), self._yscale.transform(self.y)):
-            self.canvas[-round(y)-1, int(start):round(x)] = marker
+        for plot in self._plots:
+            plot()
+
+    def scatter(self, x, y, marker="o"):
+        def draw_scatter(x, y, marker):
+            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
+                self.canvas[-round(yi)-1, round(xi)] = marker
+        self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
+
+    def line(self, x, y, marker="*"):
+        def draw_line(x, y, marker):
+            xs = self._xscale.transform(x)
+            ys = self._yscale.transform(y)
+            for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
+                for x, y in plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
+                    self.canvas[-y-1, x] = marker
+        self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
+
+    def bar(self, x, y, marker="#"):
+        def draw_bar(x, y, marker):
+            bottom = self._yscale.transform(min(y))
+            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
+                self.canvas[-round(yi)-1:-int(bottom), round(xi)] = marker
+        self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
+
+    def hbar(self, x, y, marker="#"):
+        def draw_hbar(x, y, marker):
+            start = self._xscale.transform(min(x))
+            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
+                self.canvas[-round(yi)-1, int(start):round(xi)] = marker
+        self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
 
     def __repr__(self):
+        self.draw()
         return "\n".join(["".join(row) for row in self.canvas.tolist()])
 
     def show(self):

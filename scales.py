@@ -46,5 +46,5 @@ class NominalScale(Scale):
             idxmap = {value: scale.transform([i])[0] for value, i in idxmap.items()}
 
         def _transform(values):
-            return [idxmap[value] for value in values]
+            return [idxmap[str(value)] for value in values]
         self._transform = _transform
