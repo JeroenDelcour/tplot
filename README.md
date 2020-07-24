@@ -1,10 +1,3 @@
-# termplot
+# tplot
 
-A command-line tool for graphical plotting.
-
-# To-do
-
-- [x] Improve resolution by using Unicode Braille characters for sub-character point plotting
-- [ ] Documentation
-- [ ] Histogram
-- [ ] More tick marks
+Package for creating text-based graphs. Useful for visualizating data in the terminal.

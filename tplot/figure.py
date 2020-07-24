@@ -3,8 +3,8 @@ from functools import lru_cache, cached_property, partial
 from colorama import init
 import numpy as np
 
-from scales import *
-from utils import *
+from .scales import *
+from .utils import *
 
 
 class Figure:
