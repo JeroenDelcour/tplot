@@ -64,6 +64,9 @@ class Figure:
     @property
     def _xax_height(self):
         return 2 + bool(self.xlabel)
+    
+    def _fmt(self, value):
+        return f"{value:.2g}"
 
     @cached_property
     def _yax_width(self):
@@ -71,7 +74,7 @@ class Figure:
         Since y-axis tick labels are drawn horizontally, the width of the y axis
         depends on the length of the labels, which themselves depend on the data.
         """
-        labels = (str(value) for value in self._ytick_values)
+        labels = (self._fmt(value) for value in self._ytick_values)
         width = max([len(label) for label in labels])
         width += 1  # for axis ticks
         width += bool(self.ylabel) * 2  # for y label
@@ -106,7 +109,7 @@ class Figure:
         self.canvas[-end-1:-start, self._yax_width-1] = "|"
         for value, pos in zip(self._ytick_values, self._yscale.transform(self._ytick_values)):
             pos = round(pos) - 1
-            label = str(value)
+            label = self._fmt(value)
             self.canvas[end-pos, self._yax_width-1] = "+"
             self._rjust_draw(label, self.canvas[end-pos, bool(self.ylabel)*2:self._yax_width-1])
 
@@ -122,7 +125,7 @@ class Figure:
         after = self.xticklabel_length - before
         for value, pos in zip(self._xtick_values, self._xscale.transform(self._xtick_values)):
             pos = round(pos)
-            label = str(value)
+            label = self._fmt(value)
             self.canvas[-self._xax_height, pos] = "+"
             if pos == start:  # left-adjust first ticklabel
                 self._ljust_draw(label[:after], self.canvas[-self._xax_height+1, pos:pos+after])
