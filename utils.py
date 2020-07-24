@@ -45,7 +45,7 @@ def best_ticks(min_, max_, most):
     # generate ticks
     sign = math.copysign(1, min_)
     start = step * math.floor(abs(min_) / step) * sign
-    return [start+i*step for i in range(int((max_-start)/step)+1)]
+    return [start+i*step for i in range(round((max_-start)/step)+1)]
 
 
 def get_braille(s):

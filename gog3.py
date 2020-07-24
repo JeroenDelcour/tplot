@@ -1,5 +1,5 @@
 from numbers import Number
-from functools import cached_property, partial
+from functools import lru_cache, cached_property, partial
 from colorama import init
 import numpy as np
 
@@ -23,29 +23,42 @@ class Figure:
 
     @property
     def x(self):
-        return np.concatenate([plot.keywords["x"] for plot in self._plots])
+        return tuple([x for plot in self._plots for x in plot.keywords["x"]])
 
     @property
     def y(self):
-        return np.concatenate([plot.keywords["y"] for plot in self._plots])
+        return tuple([y for plot in self._plots for y in plot.keywords["y"]])
+
+    @lru_cache
+    def is_numerical(self, data):
+        return all([isinstance(value, Number) for value in data])
 
     @cached_property
     def _yscale(self):
-        if all([isinstance(value, Number) for value in self.y]):
+        if self.is_numerical(self.y):
             scale = LinearScale()
         else:
             scale = NominalScale()
-        scale.fit(self.y, target_min=self._xax_height - bool(self.xlabel) +
-                  1, target_max=self.height-1 - bool(self.title))
+        target_min = self._xax_height - bool(self.xlabel) + 1
+        target_max = self.height-1 - bool(self.title)
+        scale.fit(self.y, target_min, target_max)
+        if self.is_numerical(self.y):
+            # refit scale to tick values, since those lay just outside the input data range
+            scale.fit(self._ytick_values, target_min, target_max)
         return scale
 
     @cached_property
     def _xscale(self):
-        if all([isinstance(value, Number) for value in self.x]):
+        if self.is_numerical(self.x):
             scale = LinearScale()
         else:
             scale = NominalScale()
-        scale.fit(self.x, target_min=self._yax_width, target_max=self.width-1)
+        target_min = self._yax_width
+        target_max = self.width - 1
+        scale.fit(self.x, target_min, target_max)
+        if self.is_numerical(self.x):
+            # refit scale to tick values, since those lay just outside the input data range
+            scale.fit(self._xtick_values, target_min, target_max)
         return scale
 
     @property
@@ -75,28 +88,24 @@ class Figure:
 
     @cached_property
     def _ytick_values(self):
-        if isinstance(self._yscale, NominalScale):
+        if self.is_numerical(self.y):
+            return best_ticks(min(self.y), max(self.y), most=self.height // 2)
+        else:  # nominal
             return set(self.y)  # note this may not fit depending on the height of the figure
-        else:
-            start = round(self._yscale.transform(min(self.y)))
-            end = round(self._yscale.transform(max(self.y)))
-            return best_ticks(min(self.y), max(self.y), most=(end-start) // 2)
 
     @cached_property
     def _xtick_values(self):
-        if isinstance(self._xscale, NominalScale):
+        if self.is_numerical(self.x):
+            return best_ticks(min(self.x), max(self.x), most=self.width // self.xticklabel_length)
+        else:  # nominal
             return set(self.x)  # note this may not fit dependong on the width of the figure
-        else:
-            start = round(self._xscale.transform(min(self.x)))
-            end = round(self._xscale.transform(max(self.x)))
-            return best_ticks(min(self.x), max(self.x), most=(end-start) // self.xticklabel_length)
 
     def _draw_y_axis(self):
-        start = round(self._yscale.transform(min(self.y)))
-        end = round(self._yscale.transform(max(self.y)))
-        self.canvas[-end-1:-start-1, self._yax_width-1] = "|"
+        start = round(self._yscale.transform(self._ytick_values[0]))
+        end = round(self._yscale.transform(self._ytick_values[-1]))
+        self.canvas[-end-1:-start, self._yax_width-1] = "|"
         for value, pos in zip(self._ytick_values, self._yscale.transform(self._ytick_values)):
-            pos = round(pos)
+            pos = round(pos) - 1
             label = str(value)
             self.canvas[end-pos, self._yax_width-1] = "+"
             self._rjust_draw(label, self.canvas[end-pos, bool(self.ylabel)*2:self._yax_width-1])
@@ -106,8 +115,8 @@ class Figure:
             self._center_draw(ylabel, self.canvas[start:end, 0])
 
     def _draw_x_axis(self):
-        start = round(self._xscale.transform(min(self.x)))
-        end = round(self._xscale.transform(max(self.x)))
+        start = round(self._xscale.transform(self._xtick_values[0]))
+        end = round(self._xscale.transform(self._xtick_values[-1]))
         self.canvas[-self._xax_height, start:end] = "-"
         before = self.xticklabel_length // 2
         after = self.xticklabel_length - before
