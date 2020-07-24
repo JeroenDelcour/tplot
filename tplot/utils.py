@@ -30,6 +30,10 @@ def plot_line_segment(x0, y0, x1, y1):
         D += 2*dy
 
 
+def round_away_from_zero(value):
+    return math.ceil(value) if value >= 0 else math.floor(value)
+
+
 def best_ticks(min_, max_, most):
     # find step size
     range_ = max_ - min_
@@ -44,8 +48,10 @@ def best_ticks(min_, max_, most):
     step *= magnitude
     # generate ticks
     sign = math.copysign(1, min_)
-    start = step * math.floor(abs(min_) / step) * sign
-    return [start+i*step for i in range(round((max_-start)/step)+1)]
+    start = step * round_away_from_zero(abs(min_) / step) * sign
+    if start < min_:
+        start -= step
+    return [start+i*step for i in range(round_away_from_zero((max_-start)/step)+1)]
 
 
 def get_braille(s):

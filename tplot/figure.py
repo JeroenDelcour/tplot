@@ -2,18 +2,19 @@ from numbers import Number
 from functools import lru_cache, cached_property, partial
 from colorama import init
 import numpy as np
+from shutil import get_terminal_size
 
 from .scales import *
 from .utils import *
 
 
 class Figure:
-    def __init__(self, xlabel=None, ylabel=None, title=None, width=64, height=21, xticklabel_length=7, legendloc="topright"):
+    def __init__(self, xlabel=None, ylabel=None, title=None, width=None, height=None, xticklabel_length=7, legendloc="topright"):
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title
-        self.width = width
-        self.height = height
+        self.width, self.height = get_terminal_size(fallback=(80, 24))
+        self.height -= 1  # room for prompt
         self.xticklabel_length = xticklabel_length
         self.legendloc = legendloc
 
@@ -64,7 +65,7 @@ class Figure:
     @property
     def _xax_height(self):
         return 2 + bool(self.xlabel)
-    
+
     def _fmt(self, value):
         return f"{value:.2g}"
 
