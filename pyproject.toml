@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "tplot"
+version = "0.0.3"
+description = "Create text-based graphs"
+readme = "README.md"
+authors = ["Jeroen Delcour <jeroendelcour@gmail.com>"]
+homepage = "https://github.com/JeroenDelcour/tplot"
+repository = "https://github.com/JeroenDelcour/tplot"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+colorama = "^0.4.3"
+numpy = "^1.19.1"
+
+[tool.poetry.dev-dependencies]
+line_profiler = "^3.0.2"
+pandas = "^1.0.5"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
