@@ -1,15 +1,23 @@
 from numbers import Number
-from functools import lru_cache, cached_property, partial
+from functools import lru_cache, cached_property, partial, wraps
 from colorama import init
 import numpy as np
 from shutil import get_terminal_size
+from typing import Optional
 
 from .scales import *
 from .utils import *
 
 
 class Figure:
-    def __init__(self, xlabel=None, ylabel=None, title=None, width=None, height=None, xticklabel_length=7, legendloc="topright"):
+    def __init__(self,
+                 xlabel: Optional[str] = None,
+                 ylabel: Optional[str] = None,
+                 title: Optional[str] = None,
+                 width: Optional[int] = None,
+                 height: Optional[int] = None,
+                 xticklabel_length: int = 7,
+                 legendloc: str = "topright"):
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title
@@ -141,7 +149,7 @@ class Figure:
             self._center_draw(xlabel, self.canvas[-1, start:end])
 
     def _draw_legend(self):
-        labelstrings = [f"{marker} {label}" for label, marker in self._labels]
+        labelstrings = [f"{marker} {label}" for marker, label in self._labels]
         width = max([len(labelstring) for labelstring in labelstrings]) + 2
         width = max(width, len("Legend") + 2)
         height = len(labelstrings) + 2
@@ -176,18 +184,23 @@ class Figure:
         if self._labels:
             self._draw_legend()
 
-    def scatter(self, x, y, marker="o", label=None):
+    def _prep(self, x, y, marker, label):
+        assert(len(x) == len(y))
         marker = marker[0]
+        if label:
+            self._labels.append((marker, label))
+        return x, y, marker, label
+
+    def scatter(self, x, y, marker="o", label=None):
+        x, y, marker, label = self._prep(x, y, marker, label)
 
         def draw_scatter(x, y, marker):
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self.canvas[-round(yi)-1, round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
-        if label:
-            self._labels.append((label, marker))
 
     def line(self, x, y, marker="*", label=None):
-        marker = marker[0]
+        x, y, marker, label = self._prep(x, y, marker, label)
 
         def draw_line(x, y, marker):
             xs = self._xscale.transform(x)
@@ -196,30 +209,24 @@ class Figure:
                 for x, y in plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
                     self.canvas[-y-1, x] = marker
         self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
-        if label:
-            self._labels.append((label, marker))
 
     def bar(self, x, y, marker="#", label=None):
-        marker = marker[0]
+        x, y, marker, label = self._prep(x, y, marker, label)
 
         def draw_bar(x, y, marker):
             bottom = self._yscale.transform(min(y))
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self.canvas[-round(yi)-1:-int(bottom), round(xi)] = marker
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
-        if label:
-            self._labels.append((label, marker))
 
     def hbar(self, x, y, marker="#", label=None):
-        marker = marker[0]
+        x, y, marker, label = self._prep(x, y, marker, label)
 
         def draw_hbar(x, y, marker):
             start = self._xscale.transform(min(x))
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self.canvas[-round(yi)-1, int(start):round(xi)] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
-        if label:
-            self._labels.append((label, marker))
 
     def __repr__(self):
         self.draw()
