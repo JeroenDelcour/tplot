@@ -2,7 +2,16 @@ from bisect import bisect
 import math
 from numbers import Number
 from functools import lru_cache
+import sys
 from typing import Generator, Iterable
+
+
+def unicode_supported(test_str="┌┬┐╔╦╗╒╤╕╓╥╖│║─═├┼┤╠╬╣╞╪╡╟╫╢└┴┘╚╩╝╘╧╛╙╨╜"):
+    try:
+        test_str.encode(sys.stdout.encoding)
+        return True
+    except UnicodeEncodeError:
+        return False
 
 
 @lru_cache
