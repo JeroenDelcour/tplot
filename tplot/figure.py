@@ -1,5 +1,6 @@
-from functools import lru_cache, cached_property, partial, wraps
 from colorama import init
+from termcolor import colored
+from functools import lru_cache, cached_property, partial, wraps
 import numpy as np
 from shutil import get_terminal_size
 from typing import Optional
@@ -51,7 +52,7 @@ class Figure:
         self.title = title
         self.legendloc = legendloc
         self.xticklabel_length = xticklabel_length
-        
+
         self.ascii_only = ascii_only
         if self.ascii_only is None:
             self.ascii_only = not unicode_supported()
@@ -180,10 +181,10 @@ class Figure:
             self._center_draw(xlabel, self._canvas[-1, start:end])
 
     def _draw_legend(self):
-        labelstrings = [f"{marker} {label}" for marker, label in self._labels]
-        width = max([len(labelstring) for labelstring in labelstrings]) + 2
+        # labelstrings = [f"{marker} {label}" for marker, label in self._labels]
+        width = max([len(label) for marker, label in self._labels]) + 4
         width = max(width, len("Legend") + 2)
-        height = len(labelstrings) + 2
+        height = len(self._labels) + 2
 
         if self.legendloc.startswith("top"):
             top = -int(self._yscale.transform(self._ytick_values[-1])) - 1
@@ -195,27 +196,31 @@ class Figure:
             left = int(self._xscale.transform(self._xtick_values[0]))
 
         self._canvas[top, left:left+width] = list("┌" + "Legend".center(width-2, "─") + "┐")
-        for i, labelstring in enumerate(labelstrings):
-            self._canvas[top+i+1, left:left+width] = list("│" + labelstring.ljust(width-2) + "│")
-        self._canvas[top+len(labelstrings)+1, left:left+width] = list("└" + "─"*(width-2) + "┘")
+        for i, (marker, label) in enumerate(self._labels):
+            self._canvas[top+i+1, left:left+width] = list("│" + "  " + label.ljust(width-4) + "│")
+            # the marker must be inserted separately in case of ANSI escape characters messing with the string length
+            self._canvas[top+i+1, left+1] = marker
+        self._canvas[top+len(self._labels)+1, left:left+width] = list("└" + "─"*(width-2) + "┘")
 
-    def _prep(self, x, y, marker, label):
+    def _prep(self, x, y, marker, color, label):
         assert(len(x) == len(y))
         marker = marker[0]
+        if color and not self.ascii_only:
+            marker = colored(text=marker, color=color)
         if label:
             self._labels.append((marker, label))
-        return x, y, marker, label
+        return x, y, marker, color, label
 
-    def scatter(self, x, y, marker="•", label=None):
-        x, y, marker, label = self._prep(x, y, marker, label)
+    def scatter(self, x, y, marker="•", color=None, label=None):
+        x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_scatter(x, y, marker):
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self._canvas[-round(yi)-1, round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
-    def line(self, x, y, marker="·", label=None):
-        x, y, marker, label = self._prep(x, y, marker, label)
+    def line(self, x, y, marker="·", color=None, label=None):
+        x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_line(x, y, marker):
             xs = self._xscale.transform(x)
@@ -225,8 +230,8 @@ class Figure:
                     self._canvas[-y-1, x] = marker
         self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
 
-    def bar(self, x, y, marker="█", label=None):
-        x, y, marker, label = self._prep(x, y, marker, label)
+    def bar(self, x, y, marker="█", color=None, label=None):
+        x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_bar(x, y, marker):
             bottom = self._yscale.transform(self._ytick_values[0])
@@ -234,8 +239,8 @@ class Figure:
                 self._canvas[-round(yi)-1:-int(bottom), round(xi)] = marker
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
 
-    def hbar(self, x, y, marker="█", label=None):
-        x, y, marker, label = self._prep(x, y, marker, label)
+    def hbar(self, x, y, marker="█", color=None, label=None):
+        x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_hbar(x, y, marker):
             start = self._xscale.transform(self._xtick_values[0])
@@ -244,7 +249,8 @@ class Figure:
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
 
     def draw(self):
-        self._canvas = np.empty((self.height, self.width), dtype="U1")
+        # 8 (ANSI escape char) + 1 (marker) + 8 (ANSI escape char) = 17
+        self._canvas = np.empty((self.height, self.width), dtype="U17")
         self._canvas[:] = " "
 
         if self.title:

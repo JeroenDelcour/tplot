@@ -13,6 +13,6 @@ anscombeA = list(zip(*[(x, y) for x, y in sorted(zip(*anscombeA))]))
 anscombeB = list(zip(*[(x, -y) for x, y in sorted(zip(*anscombeB))]))
 
 fig = tplot.Figure(xlabel="x label", ylabel="y label", title="Anscombe", legendloc="bottomright")
-fig.line(x=anscombeA[0], y=anscombeA[1], label="Anscombe I")
-fig.line(*anscombeB, label="Anscombe II", marker="+")
+fig.scatter(x=anscombeA[0], y=anscombeA[1], label="Anscombe I", color="red")
+fig.bar(*anscombeB, label="Anscombe II", color="cyan")
 fig.show()
