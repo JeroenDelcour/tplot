@@ -186,13 +186,13 @@ class Figure:
         height = len(labelstrings) + 2
 
         if self.legendloc.startswith("top"):
-            top = -int(self._yscale.transform(max(self.y))) - 1
+            top = -int(self._yscale.transform(self._ytick_values[-1])) - 1
         elif self.legendloc.startswith("bottom"):
-            top = -int(self._yscale.transform(min(self.y))) - height
+            top = -int(self._yscale.transform(self._ytick_values[0])) - height
         if self.legendloc.endswith("right"):
-            left = int(self._xscale.transform(max(self.x))) - width + 1
+            left = int(self._xscale.transform(self._xtick_values[-1])) - width + 1
         elif self.legendloc.endswith("left"):
-            left = int(self._xscale.transform(min(self.x)))
+            left = int(self._xscale.transform(self._xtick_values[0]))
 
         self._canvas[top, left:left+width] = list("┌" + "Legend".center(width-2, "─") + "┐")
         for i, labelstring in enumerate(labelstrings):
@@ -229,7 +229,7 @@ class Figure:
         x, y, marker, label = self._prep(x, y, marker, label)
 
         def draw_bar(x, y, marker):
-            bottom = self._yscale.transform(min(y))
+            bottom = self._yscale.transform(self._ytick_values[0])
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self._canvas[-round(yi)-1:-int(bottom), round(xi)] = marker
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
@@ -238,7 +238,7 @@ class Figure:
         x, y, marker, label = self._prep(x, y, marker, label)
 
         def draw_hbar(x, y, marker):
-            start = self._xscale.transform(min(x))
+            start = self._xscale.transform(self._xtick_values[0])
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 self._canvas[-round(yi)-1, int(start):round(xi)] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
