@@ -1,9 +1,17 @@
 from bisect import bisect
 import math
+from numbers import Number
+from functools import lru_cache
+from typing import Generator, Iterable
 
 
-def plot_line_segment(x0, y0, x1, y1):
-    """ Plot line segment using Bresenham algorithm. Yields (x, y). """
+@lru_cache
+def is_numerical(data: Iterable[Number], /) -> bool:
+    return all([isinstance(value, Number) for value in data])
+
+
+def plot_line_segment(x0: int, y0: int, x1: int, y1: int) -> Generator[Iterable[int], None, None]:
+    """Plot line segment using Bresenham algorithm. Yields (x, y)."""
     dx = x1 - x0
     dy = y1 - y0
     axes_swapped = False
@@ -30,11 +38,12 @@ def plot_line_segment(x0, y0, x1, y1):
         D += 2*dy
 
 
-def round_away_from_zero(value):
+def round_away_from_zero(value: float) -> int:
     return math.ceil(value) if value >= 0 else math.floor(value)
 
 
-def best_ticks(min_, max_, most):
+def best_ticks(min_: float, max_: float, most: int) -> list:
+    """Returns a list of suitable tick values."""
     # find step size
     range_ = max_ - min_
     if range_ == 0:
