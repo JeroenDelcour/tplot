@@ -4,6 +4,7 @@ from functools import lru_cache, cached_property, partial, wraps
 import numpy as np
 from shutil import get_terminal_size
 from typing import Optional
+from warnings import warn
 
 from .scales import *
 from .utils import *
@@ -107,7 +108,10 @@ class Figure:
         return 2 + bool(self.xlabel)
 
     def _fmt(self, value):
-        return f"{value:.2g}"
+        if isinstance(value, Number):
+            return f"{value:.2g}"
+        else:
+            return str(value)
 
     @cached_property
     def _yax_width(self):
@@ -135,15 +139,22 @@ class Figure:
         if is_numerical(self.y):
             return best_ticks(min(self.y), max(self.y), most=self.height // 3)
         else:  # nominal
-            return set(self.y)  # note this may not fit depending on the height of the figure
+            values = sorted([str(v) for v in set(self.y)])  # note this may not fit depending on the height of the figure
+            y_axis_height = self.height - bool(self.title) - self._xax_height
+            if len(values) > y_axis_height:
+                raise ValueError(f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph taller.")
+            return values
 
     @cached_property
     def _xtick_values(self):
         if is_numerical(self.x):
             return best_ticks(min(self.x), max(self.x), most=self.width // self.xticklabel_length)
         else:  # nominal
-            return set(self.x)  # note this may not fit dependong on the width of the figure
-
+            values = sorted([str(v) for v in set(self.x)])  # note this may not fit dependong on the width of the figure
+            # x_axis_width = self.width - self._yax_width
+            # if len(values) > x_axis_width:
+            #     raise ValueError(f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph wider.")
+            return values
     def _draw_y_axis(self):
         start = round(self._yscale.transform(self._ytick_values[0]))
         end = round(self._yscale.transform(self._ytick_values[-1]))
@@ -234,18 +245,26 @@ class Figure:
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_bar(x, y, marker):
-            bottom = self._yscale.transform(self._ytick_values[0])
+            if is_numerical(self.y):
+                origin = self._yscale.transform(min(self._ytick_values, key=abs))
+            else:
+                origin = self._yscale.transform(self._ytick_values[0])
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
-                self._canvas[-round(yi)-1:-int(bottom), round(xi)] = marker
+                start, end = sorted([-origin, -yi])
+                self._canvas[round(start)-1:round(end), round(xi)] = marker
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
 
     def hbar(self, x, y, marker="█", color=None, label=None):
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_hbar(x, y, marker):
-            start = self._xscale.transform(self._xtick_values[0])
+            if is_numerical(self.x):
+                origin = self._xscale.transform(min(self._xtick_values, key=abs))
+            else:
+                origin = self._xscale.transform(self._xtick_values[0])
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
-                self._canvas[-round(yi)-1, int(start):round(xi)] = marker
+                start, end = sorted([origin, xi])
+                self._canvas[-round(yi)-1, round(start):round(end)+1] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
 
     def draw(self):

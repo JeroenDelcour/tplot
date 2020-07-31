@@ -39,6 +39,7 @@ class NominalScale(Scale):
         super().__init__()
 
     def fit(self, values, target_min=0, target_max=None):
+        values = [str(v) for v in values]
         idxmap = {value: i for i, value in enumerate(sorted(set(values)))}
         if target_max is not None and target_max > len(idxmap):
             scale = LinearScale()

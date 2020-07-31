@@ -66,8 +66,8 @@ def best_ticks(min_: float, max_: float, most: int) -> list:
     step *= magnitude
     # generate ticks
     sign = math.copysign(1, min_)
-    start = step * round_away_from_zero(abs(min_) / step) * sign
-    if start < min_:
+    start = step * round(abs(min_) / step) * sign
+    if start > min_:
         start -= step
     return [start+i*step for i in range(round_away_from_zero((max_-start)/step)+1)]
 
