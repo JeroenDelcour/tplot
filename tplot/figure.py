@@ -9,7 +9,7 @@ from warnings import warn
 from .scales import *
 from .utils import *
 
-ascii_fallback = {
+ASCII_FALLBACK = {
     "─": "-",
     "│": "|",
     "┤": "+",
@@ -36,7 +36,7 @@ class Figure:
         height: Height of the figure. Defaults to the terminal window height, or falls back to 24.
         legendloc: Location of the legend. Accepted values: "topleft", "topright", "bottomleft", "bottomright".
         xticklabel_length: Length of the tick labels on the x axis. Determines how many x ticks are shown.
-        ascii_only: Use only ascii characters. Defaults to trying to detect if unicode is supported in the terminal.
+        ascii: Use only ascii characters. Defaults to trying to detect if unicode is supported in the terminal.
     """
 
     def __init__(self,
@@ -47,14 +47,14 @@ class Figure:
                  height: Optional[int] = None,
                  legendloc: str = "topright",
                  xticklabel_length: int = 7,
-                 ascii_only: Optional[bool] = None):
+                 ascii: Optional[bool] = None):
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title
         self.legendloc = legendloc
         self.xticklabel_length = xticklabel_length
 
-        self.ascii_only = ascii_only
+        self.ascii_only = ascii
         if self.ascii_only is None:
             self.ascii_only = not unicode_supported()
 
@@ -285,7 +285,7 @@ class Figure:
             self._draw_legend()
 
         if self.ascii_only:
-            for old, new in ascii_fallback.items():
+            for old, new in ASCII_FALLBACK.items():
                 self._canvas = np.char.replace(self._canvas, old, new)
 
     def __repr__(self):
