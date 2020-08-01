@@ -1,6 +1,5 @@
 import numpy as np
 from .scales import LinearScale
-from PIL import Image
 
 
 def resize(im, shape):
@@ -31,19 +30,3 @@ def img2ascii(image: np.ndarray, width: int, height: int, cmap: str = "ascii") -
         scale.fit(image.flatten(), target_min, target_max)
     out = [[cmap[round(scale.transform(v))] for v in row] for row in image]
     return np.array(out)
-
-
-def gaussian2D(shape, x_offset, y_offset, sigma_x=1, sigma_y=1, amplitude=1):
-    X, Y = np.meshgrid(np.arange(0, shape[1]), np.arange(0, shape[0]))
-    return amplitude * np.exp(
-        -(
-            (X - x_offset) ** 2 / (2 * (sigma_x ** 2))
-            + (Y - y_offset) ** 2 / (2 * (sigma_y ** 2))
-        )
-    )
-
-
-# # image = gaussian2D((40, 40), x_offset=20, y_offset=20, sigma_x=5, sigma_y=5)
-# image = np.array(Image.open("cameraman.png").convert("L"))
-# result = img2ascii(image, 80, 50, cmap="ascii_short")
-# print("\n".join(["".join(row) for row in result]))
