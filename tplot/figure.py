@@ -8,6 +8,7 @@ from warnings import warn
 
 from .scales import *
 from .utils import *
+from .img2ascii import img2ascii
 
 ASCII_FALLBACK = {
     "─": "-",
@@ -53,6 +54,8 @@ class Figure:
         self.title = title
         self.legendloc = legendloc
         self.xticklabel_length = xticklabel_length
+        assert isinstance(self.xticklabel_length, int)
+        assert self.xticklabel_length > 0
 
         self.ascii_only = ascii
         if self.ascii_only is None:
@@ -62,6 +65,8 @@ class Figure:
         term_height -= 1  # room for prompt
         self.width = width if width else term_width
         self.height = height if height else term_height
+        assert isinstance(self.width, int) and self.width > 0
+        assert isinstance(self.height, int) and self.height > 0
 
         # gather stuff to plot before actually drawing it
         self._plots = []
@@ -109,7 +114,7 @@ class Figure:
 
     def _fmt(self, value):
         if isinstance(value, Number):
-            return f"{value:.2g}"
+            return f"{value:.3g}"
         else:
             return str(value)
 
@@ -139,10 +144,11 @@ class Figure:
         if is_numerical(self.y):
             return best_ticks(min(self.y), max(self.y), most=self.height // 3)
         else:  # nominal
-            values = sorted([str(v) for v in set(self.y)])  # note this may not fit depending on the height of the figure
+            values = sorted([str(v) for v in set(self.y)])
             y_axis_height = self.height - bool(self.title) - self._xax_height
             if len(values) > y_axis_height:
-                raise ValueError(f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph taller.")
+                raise ValueError(
+                    f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph taller.")
             return values
 
     @cached_property
@@ -150,11 +156,12 @@ class Figure:
         if is_numerical(self.x):
             return best_ticks(min(self.x), max(self.x), most=self.width // self.xticklabel_length)
         else:  # nominal
-            values = sorted([str(v) for v in set(self.x)])  # note this may not fit dependong on the width of the figure
-            # x_axis_width = self.width - self._yax_width
-            # if len(values) > x_axis_width:
-            #     raise ValueError(f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph wider.")
+            values = sorted([str(v) for v in set(self.x)])  # note this may not fit depending on the width of the figure
+            x_axis_width = self.width - self._yax_width
+            if len(values)*self.xticklabel_length > x_axis_width:
+                raise ValueError(f"Too many ({len(values)}) unique x values to fit into x axis. Try making the graph wider or reducing `xtickvalue_length`.")
             return values
+
     def _draw_y_axis(self):
         start = round(self._yscale.transform(self._ytick_values[0]))
         end = round(self._yscale.transform(self._ytick_values[-1]))
@@ -175,9 +182,11 @@ class Figure:
         self._canvas[-self._xax_height, start:end] = "─"
         before = self.xticklabel_length // 2
         after = self.xticklabel_length - before
+        print(self._xtick_values)
         for value, pos in zip(self._xtick_values, self._xscale.transform(self._xtick_values)):
             pos = round(pos)
             label = self._fmt(value)
+            print(pos, before, after)
             self._canvas[-self._xax_height, pos] = "┬"
             if pos == start:  # left-adjust first ticklabel
                 self._ljust_draw(label[:after], self._canvas[-self._xax_height+1, pos:pos+after])
@@ -266,6 +275,19 @@ class Figure:
                 start, end = sorted([origin, xi])
                 self._canvas[-round(yi)-1, round(start):round(end)+1] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
+
+    def image(self, image, cmap="block"):
+        cmap = "ascii" if self.ascii_only else cmap
+        def draw_image(x, y):
+            xmin = round(self._xscale.transform(0))
+            ymin = round(self._yscale.transform(0))
+            xmax = round(self._xscale.transform(image.shape[1]))
+            ymax = round(self._yscale.transform(image.shape[0]))
+            drawn = img2ascii(image, width=xmax-xmin, height=ymax-ymin, cmap=cmap)
+            self._canvas[-ymax:-ymin, xmin:xmax] = drawn
+        x, y = np.meshgrid(np.arange(0, image.shape[1]+1), np.arange(0, image.shape[0]+1))
+        x, y = tuple(x.flatten()), tuple(y.flatten())
+        self._plots.append(partial(draw_image, x=x, y=y))
 
     def draw(self):
         # 8 (ANSI escape char) + 1 (marker) + 8 (ANSI escape char) = 17
