@@ -82,37 +82,36 @@ class Figure:
     def y(self):
         return tuple([y for plot in self._plots for y in plot.keywords["y"]])
 
-    @cached_property
+    @lru_cache(maxsize=1)
     def _yscale(self):
         if is_numerical(self.y):
             scale = LinearScale()
         else:
             scale = NominalScale()
-        target_min = -self._xax_height - 1
+        target_min = -self._xax_height() - 1
         target_max = -self.height + 1 + bool(self.title)
         if self._y_origin == "upper":
             target_min, target_max = target_max, target_min
         scale.fit(self.y, target_min, target_max)
         if is_numerical(self.y):
             # refit scale to tick values, since those lay just outside the input data range
-            scale.fit(self._ytick_values, target_min, target_max)
+            scale.fit(self._ytick_values(), target_min, target_max)
         return scale
 
-    @cached_property
+    @lru_cache(maxsize=1)
     def _xscale(self):
         if is_numerical(self.x):
             scale = LinearScale()
         else:
             scale = NominalScale()
-        target_min = self._yax_width
+        target_min = self._yax_width()
         target_max = self.width - 1
         scale.fit(self.x, target_min, target_max)
         if is_numerical(self.x):
             # refit scale to tick values, since those lay just outside the input data range
-            scale.fit(self._xtick_values, target_min, target_max)
+            scale.fit(self._xtick_values(), target_min, target_max)
         return scale
 
-    @property
     def _xax_height(self):
         return 2 + bool(self.xlabel)
 
@@ -122,13 +121,13 @@ class Figure:
         else:
             return str(value)
 
-    @cached_property
+    @lru_cache(maxsize=1)
     def _yax_width(self):
         """
         Since y-axis tick labels are drawn horizontally, the width of the y axis
         depends on the length of the labels, which themselves depend on the data.
         """
-        labels = (self._fmt(value) for value in self._ytick_values)
+        labels = (self._fmt(value) for value in self._ytick_values())
         width = max([len(label) for label in labels])
         width += 1  # for axis ticks
         width += bool(self.ylabel) * 2  # for y label
@@ -143,62 +142,62 @@ class Figure:
     def _rjust_draw(self, string, array, fillchar=" "):
         array[:] = list(string.rjust(len(array), fillchar))
 
-    @cached_property
+    @lru_cache(maxsize=1)
     def _ytick_values(self):
         if is_numerical(self.y):
-            return best_ticks(min(self.y), max(self.y), most=self.height // 3)
+            return best_ticks(cached_min(self.y), cached_max(self.y), most=self.height // 3)
         else:  # nominal
             values = sorted([str(v) for v in set(self.y)])
-            y_axis_height = self.height - bool(self.title) - self._xax_height
+            y_axis_height = self.height - bool(self.title) - self._xax_height()
             if len(values) > y_axis_height:
                 raise ValueError(
                     f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph taller.")
             return values
 
-    @cached_property
+    @lru_cache(maxsize=1)
     def _xtick_values(self):
         if is_numerical(self.x):
-            return best_ticks(min(self.x), max(self.x), most=self.width // self.xticklabel_length)
+            return best_ticks(cached_min(self.x), cached_max(self.x), most=self.width // self.xticklabel_length)
         else:  # nominal
             values = sorted([str(v) for v in set(self.x)])  # note this may not fit depending on the width of the figure
-            x_axis_width = self.width - self._yax_width
+            x_axis_width = self.width - self._yax_width()
             if len(values)*self.xticklabel_length > x_axis_width:
                 raise ValueError(
                     f"Too many ({len(values)}) unique x values to fit into x axis. Try making the graph wider or reducing `xtickvalue_length`.")
             return values
 
     def _draw_y_axis(self):
-        start = round(self._yscale.transform(self._ytick_values[-1]))
-        end = round(self._yscale.transform(self._ytick_values[0]))
+        start = round(self._yscale().transform(self._ytick_values()[-1]))
+        end = round(self._yscale().transform(self._ytick_values()[0]))
         start, end = min(start, end), max(start, end)
-        self._canvas[start:end, self._yax_width-1] = "│"
-        for value, pos in zip(self._ytick_values, self._yscale.transform(self._ytick_values)):
+        self._canvas[start:end, self._yax_width()-1] = "│"
+        for value, pos in zip(self._ytick_values(), self._yscale().transform(self._ytick_values())):
             pos = round(pos)
             label = self._fmt(value)
-            self._canvas[pos, self._yax_width-1] = "┤"
-            self._rjust_draw(label, self._canvas[pos, bool(self.ylabel)*2:self._yax_width-1])
+            self._canvas[pos, self._yax_width()-1] = "┤"
+            self._rjust_draw(label, self._canvas[pos, bool(self.ylabel)*2:self._yax_width()-1])
 
         if self.ylabel:
             ylabel = self.ylabel[:end-start]  # make sure it fits
             self._center_draw(ylabel, self._canvas[start:end, 0])
 
     def _draw_x_axis(self):
-        start = round(self._xscale.transform(self._xtick_values[0]))
-        end = round(self._xscale.transform(self._xtick_values[-1]))
-        self._canvas[-self._xax_height, start:end] = "─"
+        start = round(self._xscale().transform(self._xtick_values()[0]))
+        end = round(self._xscale().transform(self._xtick_values()[-1]))
+        self._canvas[-self._xax_height(), start:end] = "─"
         before = self.xticklabel_length // 2
         after = self.xticklabel_length - before
-        for value, pos in zip(self._xtick_values, self._xscale.transform(self._xtick_values)):
+        for value, pos in zip(self._xtick_values(), self._xscale().transform(self._xtick_values())):
             pos = round(pos)
             label = self._fmt(value)
-            self._canvas[-self._xax_height, pos] = "┬"
+            self._canvas[-self._xax_height(), pos] = "┬"
             if pos == start:  # left-adjust first ticklabel
-                self._ljust_draw(label[:after], self._canvas[-self._xax_height+1, pos:pos+after])
+                self._ljust_draw(label[:after], self._canvas[-self._xax_height()+1, pos:pos+after])
             elif pos == end:  # right-adjust last ticklabel
-                self._rjust_draw(label[:before+1], self._canvas[-self._xax_height+1, pos-before:pos+1])
+                self._rjust_draw(label[:before+1], self._canvas[-self._xax_height()+1, pos-before:pos+1])
             else:  # center other ticklabels
                 self._center_draw(label[:self.xticklabel_length],
-                                  self._canvas[-self._xax_height+1, pos-before:pos+after])
+                                  self._canvas[-self._xax_height()+1, pos-before:pos+after])
 
         if self.xlabel:
             xlabel = self.xlabel[:end-start]  # make sure it fits
@@ -206,18 +205,18 @@ class Figure:
 
     def _draw_legend(self):
         # labelstrings = [f"{marker} {label}" for marker, label in self._labels]
-        width = max([len(label) for marker, label in self._labels]) + 4
-        width = max(width, len("Legend") + 2)
+        width = cached_max([len(label) for marker, label in self._labels]) + 4
+        width = cached_max(width, len("Legend") + 2)
         height = len(self._labels) + 2
 
         if self.legendloc.startswith("top"):
-            top = -int(self._yscale.transform(self._ytick_values[-1])) - 1
+            top = -int(self._yscale().transform(self._ytick_values()[-1])) - 1
         elif self.legendloc.startswith("bottom"):
-            top = -int(self._yscale.transform(self._ytick_values[0])) - height
+            top = -int(self._yscale().transform(self._ytick_values()[0])) - height
         if self.legendloc.endswith("right"):
-            left = int(self._xscale.transform(self._xtick_values[-1])) - width + 1
+            left = int(self._xscale().transform(self._xtick_values()[-1])) - width + 1
         elif self.legendloc.endswith("left"):
-            left = int(self._xscale.transform(self._xtick_values[0]))
+            left = int(self._xscale().transform(self._xtick_values()[0]))
 
         self._canvas[top, left:left+width] = list("┌" + "Legend".center(width-2, "─") + "┐")
         for i, (marker, label) in enumerate(self._labels):
@@ -239,7 +238,7 @@ class Figure:
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_scatter(x, y, marker):
-            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
+            for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
                 self._canvas[round(yi), round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
@@ -247,8 +246,8 @@ class Figure:
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_line(x, y, marker):
-            xs = self._xscale.transform(x)
-            ys = self._yscale.transform(y)
+            xs = self._xscale().transform(x)
+            ys = self._yscale().transform(y)
             for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
                 for x, y in plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
                     self._canvas[y, x] = marker
@@ -259,10 +258,10 @@ class Figure:
 
         def draw_bar(x, y, marker):
             if is_numerical(self.y):
-                origin = self._yscale.transform(min(self._ytick_values, key=abs))
+                origin = self._yscale().transform(min(self._ytick_values(), key=abs))
             else:
-                origin = self._yscale.transform(self._ytick_values[0])
-            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
+                origin = self._yscale().transform(self._ytick_values()[0])
+            for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
                 start, end = sorted([origin, yi])
                 self._canvas[round(start):round(end)+1, round(xi)] = marker
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
@@ -272,10 +271,10 @@ class Figure:
 
         def draw_hbar(x, y, marker):
             if is_numerical(self.x):
-                origin = self._xscale.transform(min(self._xtick_values, key=abs))
+                origin = self._xscale().transform(min(self._xtick_values(), key=abs))
             else:
-                origin = self._xscale.transform(self._xtick_values[0])
-            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
+                origin = self._xscale().transform(self._xtick_values()[0])
+            for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
                 start, end = sorted([origin, xi])
                 self._canvas[round(yi), round(start):round(end)+1] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
@@ -290,24 +289,22 @@ class Figure:
             vmin = 0 if vmin is None else vmin
             vmax = 255 if vmax is None else vmax
         else:
-            vmin = image.flatten().min() if vmin is None else vmin
-            vmax = image.flatten().max() if vmax is None else vmax
+            vmin = image.flatten().cached_min() if vmin is None else vmin
+            vmax = image.flatten().cached_max() if vmax is None else vmax
         self._y_origin = origin
 
         def draw_image(x, y):
-            xmin = round(self._xscale.transform(0))
-            ymin = round(self._yscale.transform(0))
-            xmax = round(self._xscale.transform(image.shape[1]))
-            ymax = round(self._yscale.transform(image.shape[0]))
+            xmin = round(self._xscale().transform(0))
+            ymin = round(self._yscale().transform(0))
+            xmax = round(self._xscale().transform(image.shape[1]))
+            ymax = round(self._yscale().transform(image.shape[0]))
             ymin, ymax = min(ymin, ymax), max(ymin, ymax)
             drawn = img2ascii(image, width=xmax-xmin+1, height=ymax-ymin+1, vmin=vmin, vmax=vmax, cmap=cmap)
             if origin == "lower":
                 drawn = np.flip(drawn, axis=0)
             self._canvas[ymin:ymax+1, xmin:xmax+1] = drawn
 
-        x, y = np.meshgrid(np.arange(0, image.shape[1]+1), np.arange(0, image.shape[0]+1))
-        x, y = tuple(x.flatten()), tuple(y.flatten())
-        self._plots.append(partial(draw_image, x=x, y=y))
+        self._plots.append(partial(draw_image, x=tuple(range(image.shape[1])), y=tuple(range(image.shape[0]))))
 
     def draw(self):
         # 8 (ANSI escape char) + 1 (marker) + 8 (ANSI escape char) = 17
@@ -329,6 +326,15 @@ class Figure:
         if self.ascii_only:
             for old, new in ASCII_FALLBACK.items():
                 self._canvas = np.char.replace(self._canvas, old, new)
+
+    def clear(self):
+        self._plots = []
+        self._labels = []
+        self._xscale.cache_clear()
+        self._yscale.cache_clear()
+        self._xtick_values.cache_clear()
+        self._ytick_values.cache_clear()
+        self._yax_width.cache_clear()
 
     def __repr__(self):
         self.draw()

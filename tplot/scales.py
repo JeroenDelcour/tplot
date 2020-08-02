@@ -1,4 +1,7 @@
 from numbers import Number
+from typing import Iterable
+import numpy as np
+from .utils import cached_min, cached_max
 
 
 class Scale:
@@ -6,12 +9,16 @@ class Scale:
         pass
 
     def transform(self, values):
-        if isinstance(values, Number) or isinstance(values, str):
-            return self._transform([values])[0]
+        if isinstance(values, np.ndarray):
+            return self._transform(values)
+        elif isinstance(values, str):
+            return self._transform(values)
+        elif isinstance(values, Iterable):
+            return [self._transform(v) for v in values]
         else:
             return self._transform(values)
 
-    def _transform(self, values):
+    def _transform(self, value):
         raise NotImplementedError
 
 
@@ -22,13 +29,13 @@ class LinearScale(Scale):
         super().__init__()
 
     def fit(self, values, target_min, target_max):
-        original_min = min(values)
-        original_max = max(values)
+        original_min = cached_min(tuple(values))
+        original_max = cached_max(tuple(values))
         original_range = original_max - original_min
         target_range = target_max - target_min
 
-        def _transform(values):
-            return [target_range * (value - original_min) / original_range + target_min for value in values]
+        def _transform(value):
+            return target_range * (value - original_min) / original_range + target_min
         self._transform = _transform
 
 
@@ -46,6 +53,5 @@ class NominalScale(Scale):
             scale.fit(list(idxmap.values()), target_min, target_max)
             idxmap = {value: scale.transform([i])[0] for value, i in idxmap.items()}
 
-        def _transform(values):
-            return [idxmap[str(value)] for value in values]
-        self._transform = _transform
+            # return [idxmap[str(value)] for value in values]
+        self._transform = idxmap.get

@@ -1,25 +1,36 @@
 import numpy as np
 from .scales import LinearScale
+from functools import lru_cache
+
+COLORMAPS = {
+    "ascii": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "[::-1],
+    "ascii_simple": " .:-=+*#%@",
+    "block": "█▓▒░ "[::-1]
+}
+COLORMAPS = {k: np.array(tuple(v)) for k, v in COLORMAPS.items()}
 
 
-def resize(im, shape):
+@lru_cache
+def _regular_meshgrid(xmin, ymin, xmax, ymax, **kwargs):
+    return np.meshgrid(np.arange(xmin, xmax), np.arange(ymin, ymax), **kwargs)
+
+
+def resize(image: np.ndarray, shape: tuple) -> np.ndarray:
     """Nearest neighbor image resizing"""
-    nR, nC = shape
-    nR0, nC0 = im.shape[:2]  # input shape
-    return np.array([[im[int(nR0 * r / nR)][int(nC0 * c / nC)] for c in range(nC)] for r in range(nR)])
+    x, y = _regular_meshgrid(0, 0, shape[0], shape[1])
+    x = image.shape[0] * x / shape[0]
+    y = image.shape[1] * y / shape[1]
+    x = x.astype(int)
+    y = y.astype(int)
+    return image[x, y].T
 
 
 def img2ascii(image: np.ndarray, width: int, height: int, vmin: float, vmax: float, cmap: str = "block") -> np.ndarray:
-    COLORMAPS = {
-        "ascii": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "[::-1],
-        "ascii_simple": " .:-=+*#%@",
-        "block": "█▓▒░ "[::-1]
-    }
     cmap = COLORMAPS[cmap]
     if len(image.shape) != 2:
         raise ValueError("Invalid shape for grayscale image")
     image = resize(image, (height, width))
     scale = LinearScale()
     scale.fit([vmin, vmax], target_min=0, target_max=len(cmap) - 1)
-    out = [[cmap[min(max(round(scale.transform(v)), 0), len(cmap) - 1)] for v in row] for row in image]
-    return np.array(out)
+    cmap_idx = scale.transform(image.astype(float).clip(vmin, vmax)).round().astype(int)
+    return cmap[cmap_idx]
