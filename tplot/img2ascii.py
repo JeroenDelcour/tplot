@@ -12,7 +12,7 @@ def resize(im, shape):
 def img2ascii(image: np.ndarray, width: int, height: int, cmap: str = "ascii") -> np.ndarray:
     COLORMAPS = {
         "ascii": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "[::-1],
-        "ascii_short": " .:-=+*#%@",
+        "ascii_simple": " .:-=+*#%@",
         "block": "█▓▒░ "[::-1]
     }
     cmap = COLORMAPS[cmap]

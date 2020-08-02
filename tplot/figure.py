@@ -57,6 +57,8 @@ class Figure:
         assert isinstance(self.xticklabel_length, int)
         assert self.xticklabel_length > 0
 
+        self._invert_y = False
+
         self.ascii_only = ascii
         if self.ascii_only is None:
             self.ascii_only = not unicode_supported()
@@ -86,8 +88,10 @@ class Figure:
             scale = LinearScale()
         else:
             scale = NominalScale()
-        target_min = self._xax_height - bool(self.xlabel) + 1
-        target_max = self.height-1 - bool(self.title)
+        target_min = -self._xax_height - 1
+        target_max = -self.height + 1 + bool(self.title)
+        if self._invert_y:
+            target_min, target_max = target_max, target_min
         scale.fit(self.y, target_min, target_max)
         if is_numerical(self.y):
             # refit scale to tick values, since those lay just outside the input data range
@@ -159,18 +163,20 @@ class Figure:
             values = sorted([str(v) for v in set(self.x)])  # note this may not fit depending on the width of the figure
             x_axis_width = self.width - self._yax_width
             if len(values)*self.xticklabel_length > x_axis_width:
-                raise ValueError(f"Too many ({len(values)}) unique x values to fit into x axis. Try making the graph wider or reducing `xtickvalue_length`.")
+                raise ValueError(
+                    f"Too many ({len(values)}) unique x values to fit into x axis. Try making the graph wider or reducing `xtickvalue_length`.")
             return values
 
     def _draw_y_axis(self):
-        start = round(self._yscale.transform(self._ytick_values[0]))
-        end = round(self._yscale.transform(self._ytick_values[-1]))
-        self._canvas[-end-1:-start, self._yax_width-1] = "│"
+        start = round(self._yscale.transform(self._ytick_values[-1]))
+        end = round(self._yscale.transform(self._ytick_values[0]))
+        start, end = min(start, end), max(start, end)
+        self._canvas[start:end, self._yax_width-1] = "│"
         for value, pos in zip(self._ytick_values, self._yscale.transform(self._ytick_values)):
-            pos = round(pos) - 1
+            pos = round(pos)
             label = self._fmt(value)
-            self._canvas[end-pos, self._yax_width-1] = "┤"
-            self._rjust_draw(label, self._canvas[end-pos, bool(self.ylabel)*2:self._yax_width-1])
+            self._canvas[pos, self._yax_width-1] = "┤"
+            self._rjust_draw(label, self._canvas[pos, bool(self.ylabel)*2:self._yax_width-1])
 
         if self.ylabel:
             ylabel = self.ylabel[:end-start]  # make sure it fits
@@ -182,11 +188,9 @@ class Figure:
         self._canvas[-self._xax_height, start:end] = "─"
         before = self.xticklabel_length // 2
         after = self.xticklabel_length - before
-        print(self._xtick_values)
         for value, pos in zip(self._xtick_values, self._xscale.transform(self._xtick_values)):
             pos = round(pos)
             label = self._fmt(value)
-            print(pos, before, after)
             self._canvas[-self._xax_height, pos] = "┬"
             if pos == start:  # left-adjust first ticklabel
                 self._ljust_draw(label[:after], self._canvas[-self._xax_height+1, pos:pos+after])
@@ -236,7 +240,7 @@ class Figure:
 
         def draw_scatter(x, y, marker):
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
-                self._canvas[-round(yi)-1, round(xi)] = marker
+                self._canvas[round(yi), round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
     def line(self, x, y, marker="·", color=None, label=None):
@@ -247,7 +251,7 @@ class Figure:
             ys = self._yscale.transform(y)
             for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
                 for x, y in plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
-                    self._canvas[-y-1, x] = marker
+                    self._canvas[y, x] = marker
         self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
 
     def bar(self, x, y, marker="█", color=None, label=None):
@@ -259,8 +263,8 @@ class Figure:
             else:
                 origin = self._yscale.transform(self._ytick_values[0])
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
-                start, end = sorted([-origin, -yi])
-                self._canvas[round(start)-1:round(end), round(xi)] = marker
+                start, end = sorted([origin, yi])
+                self._canvas[round(start):round(end)+1, round(xi)] = marker
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
 
     def hbar(self, x, y, marker="█", color=None, label=None):
@@ -273,21 +277,23 @@ class Figure:
                 origin = self._xscale.transform(self._xtick_values[0])
             for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 start, end = sorted([origin, xi])
-                self._canvas[-round(yi)-1, round(start):round(end)+1] = marker
+                self._canvas[round(yi), round(start):round(end)+1] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
 
     def image(self, image, cmap="block"):
         cmap = "ascii" if self.ascii_only else cmap
+
         def draw_image(x, y):
             xmin = round(self._xscale.transform(0))
             ymin = round(self._yscale.transform(0))
             xmax = round(self._xscale.transform(image.shape[1]))
             ymax = round(self._yscale.transform(image.shape[0]))
-            drawn = img2ascii(image, width=xmax-xmin, height=ymax-ymin, cmap=cmap)
-            self._canvas[-ymax:-ymin, xmin:xmax] = drawn
+            drawn = img2ascii(image, width=xmax-xmin+1, height=abs(ymax-ymin)+1, cmap=cmap)
+            self._canvas[ymin:ymax+1, xmin:xmax+1] = drawn
         x, y = np.meshgrid(np.arange(0, image.shape[1]+1), np.arange(0, image.shape[0]+1))
         x, y = tuple(x.flatten()), tuple(y.flatten())
         self._plots.append(partial(draw_image, x=x, y=y))
+        self._invert_y = True
 
     def draw(self):
         # 8 (ANSI escape char) + 1 (marker) + 8 (ANSI escape char) = 17
