@@ -301,6 +301,8 @@ class Figure:
             ymax = round(self._yscale.transform(image.shape[0]))
             ymin, ymax = min(ymin, ymax), max(ymin, ymax)
             drawn = img2ascii(image, width=xmax-xmin+1, height=ymax-ymin+1, vmin=vmin, vmax=vmax, cmap=cmap)
+            if origin == "lower":
+                drawn = np.flip(drawn, axis=0)
             self._canvas[ymin:ymax+1, xmin:xmax+1] = drawn
 
         x, y = np.meshgrid(np.arange(0, image.shape[1]+1), np.arange(0, image.shape[0]+1))
