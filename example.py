@@ -31,7 +31,7 @@ image = np.array(Image.open("cameraman.png").convert("L"))
 
 fig = tplot.Figure()
 fig.image(image, cmap="block")
-fig.line([100, 140, 140, 100, 100], [40, 40, 100, 100, 40], color="red", marker="█")
+# fig.line([100, 140, 140, 100, 100], [40, 40, 100, 100, 40], color="red", marker="█")
 # fig.scatter(x=anscombeA[0], y=anscombeA[1], label="Anscombe I", color="red")
 # fig.hbar(*anscombeB, label="Anscombe II", color="cyan")
 fig.show()

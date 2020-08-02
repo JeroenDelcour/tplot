@@ -57,7 +57,7 @@ class Figure:
         assert isinstance(self.xticklabel_length, int)
         assert self.xticklabel_length > 0
 
-        self._invert_y = False
+        self._y_origin = "lower"
 
         self.ascii_only = ascii
         if self.ascii_only is None:
@@ -90,7 +90,7 @@ class Figure:
             scale = NominalScale()
         target_min = -self._xax_height - 1
         target_max = -self.height + 1 + bool(self.title)
-        if self._invert_y:
+        if self._y_origin == "upper":
             target_min, target_max = target_max, target_min
         scale.fit(self.y, target_min, target_max)
         if is_numerical(self.y):
@@ -280,20 +280,32 @@ class Figure:
                 self._canvas[round(yi), round(start):round(end)+1] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
 
-    def image(self, image, cmap="block"):
+    def image(self, image, vmin=None, vmax=None, cmap="block", origin="upper"):
         cmap = "ascii" if self.ascii_only else cmap
+        # guess correct value range
+        if (image >= 0).all() and (image <= 1).all():  # between 0 and 1 inclusive
+            vmin = 0 if vmin is None else vmin
+            vmax = 1 if vmax is None else vmax
+        elif image.dtype == np.uint8:  # between 0 and 255 inclusive, probably a picture
+            vmin = 0 if vmin is None else vmin
+            vmax = 255 if vmax is None else vmax
+        else:
+            vmin = image.flatten().min() if vmin is None else vmin
+            vmax = image.flatten().max() if vmax is None else vmax
+        self._y_origin = origin
 
         def draw_image(x, y):
             xmin = round(self._xscale.transform(0))
             ymin = round(self._yscale.transform(0))
             xmax = round(self._xscale.transform(image.shape[1]))
             ymax = round(self._yscale.transform(image.shape[0]))
-            drawn = img2ascii(image, width=xmax-xmin+1, height=abs(ymax-ymin)+1, cmap=cmap)
+            ymin, ymax = min(ymin, ymax), max(ymin, ymax)
+            drawn = img2ascii(image, width=xmax-xmin+1, height=ymax-ymin+1, vmin=vmin, vmax=vmax, cmap=cmap)
             self._canvas[ymin:ymax+1, xmin:xmax+1] = drawn
+
         x, y = np.meshgrid(np.arange(0, image.shape[1]+1), np.arange(0, image.shape[0]+1))
         x, y = tuple(x.flatten()), tuple(y.flatten())
         self._plots.append(partial(draw_image, x=x, y=y))
-        self._invert_y = True
 
     def draw(self):
         # 8 (ANSI escape char) + 1 (marker) + 8 (ANSI escape char) = 17
