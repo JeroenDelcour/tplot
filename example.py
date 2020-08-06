@@ -30,26 +30,26 @@ def gaussian2D(shape, x_offset, y_offset, sigma_x=1, sigma_y=1, amplitude=1):
 
 # image = gaussian2D((40, 40), x_offset=20, y_offset=20, sigma_x=5, sigma_y=5)
 # image = np.array(Image.open("cameraman.png").convert("L"))
-# fig = tplot.Figure()
-# fig.bar(*anscombeA)
-# fig.show()
+fig = tplot.Figure(legendloc="bottomright")
+fig.scatter(*anscombeA, label="AnscombeA")
+fig.show()
 
-def main():
-    cap = cv2.VideoCapture("rickroll.mp4")
-    fig = tplot.Figure()
-    while True:
-        t0 = time()
-        success, frame = cap.read()
-        if not success:
-            break
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        fig.clear()
-        fig.image(gray, cmap="block")
-        scrollup = 54
-        sys.stdout.write(f"\x1b[{scrollup}A")
-        fig.show()
-        dt = (time() - t0) / 1000
-        sleep(1/25 - dt)
+# def main():
+#     cap = cv2.VideoCapture("rickroll.mp4")
+#     fig = tplot.Figure()
+#     while True:
+#         t0 = time()
+#         success, frame = cap.read()
+#         if not success:
+#             break
+#         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+#         fig.clear()
+#         fig.image(gray, cmap="block")
+#         scrollup = 54
+#         sys.stdout.write(f"\x1b[{scrollup}A")
+#         fig.show()
+#         dt = (time() - t0) / 1000
+#         sleep(1/32 - dt)
 
 
-main()
+# main()

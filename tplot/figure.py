@@ -205,14 +205,14 @@ class Figure:
 
     def _draw_legend(self):
         # labelstrings = [f"{marker} {label}" for marker, label in self._labels]
-        width = cached_max([len(label) for marker, label in self._labels]) + 4
-        width = cached_max(width, len("Legend") + 2)
+        width = max([len(label) for marker, label in self._labels]) + 4
+        width = max(width, len("Legend") + 2)
         height = len(self._labels) + 2
 
         if self.legendloc.startswith("top"):
-            top = -int(self._yscale().transform(self._ytick_values()[-1])) - 1
+            top = int(self._yscale().transform(self._ytick_values()[-1]))
         elif self.legendloc.startswith("bottom"):
-            top = -int(self._yscale().transform(self._ytick_values()[0])) - height
+            top = int(self._yscale().transform(self._ytick_values()[0])) - height + 1
         if self.legendloc.endswith("right"):
             left = int(self._xscale().transform(self._xtick_values()[-1])) - width + 1
         elif self.legendloc.endswith("left"):
