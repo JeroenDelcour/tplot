@@ -226,6 +226,8 @@ class Figure:
         self._canvas[top+len(self._labels)+1, left:left+width] = list("└" + "─"*(width-2) + "┘")
 
     def _prep(self, x, y, marker, color, label):
+        if y is None:  # only y value provided
+            x, y = range(len(x)), x
         assert(len(x) == len(y))
         marker = marker[0]
         if color and not self.ascii_only:
@@ -234,7 +236,7 @@ class Figure:
             self._labels.append((marker, label))
         return x, y, marker, color, label
 
-    def scatter(self, x, y, marker="•", color=None, label=None):
+    def scatter(self, x, y=None, marker="•", color=None, label=None):
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_scatter(x, y, marker):
@@ -242,7 +244,7 @@ class Figure:
                 self._canvas[round(yi), round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
-    def line(self, x, y, marker="·", color=None, label=None):
+    def line(self, x, y=None, marker="·", color=None, label=None):
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_line(x, y, marker):
@@ -253,7 +255,7 @@ class Figure:
                     self._canvas[y, x] = marker
         self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
 
-    def bar(self, x, y, marker="█", color=None, label=None):
+    def bar(self, x, y=None, marker="█", color=None, label=None):
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_bar(x, y, marker):
@@ -266,7 +268,7 @@ class Figure:
                 self._canvas[round(start):round(end)+1, round(xi)] = marker
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
 
-    def hbar(self, x, y, marker="█", color=None, label=None):
+    def hbar(self, x, y=None, marker="█", color=None, label=None):
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_hbar(x, y, marker):
