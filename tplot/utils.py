@@ -83,7 +83,8 @@ def best_ticks(min_: float, max_: float, most: int) -> list:
 
 def get_braille(s):
     """
-    `s` is a string of '1's and '0's specifying which dots in the desired braille character must be on ('1') and which must be off ('0').
+    `s` is a string of '1's and '0's specifying which dots in the desired braille character must be on ('1')
+    and which must be off ('0').
     Dots in the 2x8 braille matrix are ordered top-down, left-to-right, i.e:
 
     a •• e

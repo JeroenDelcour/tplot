@@ -87,7 +87,7 @@ class Figure:
         if is_numerical(self.y):
             scale = LinearScale()
         else:
-            scale = NominalScale()
+            scale = CategoricalScale()
         target_min = -self._xax_height() - 1
         target_max = -self.height + 1 + bool(self.title)
         if self._y_origin == "upper":
@@ -103,7 +103,7 @@ class Figure:
         if is_numerical(self.x):
             scale = LinearScale()
         else:
-            scale = NominalScale()
+            scale = CategoricalScale()
         target_min = self._yax_width()
         target_max = self.width - 1
         scale.fit(self.x, target_min, target_max)
@@ -158,7 +158,7 @@ class Figure:
     def _xtick_values(self):
         if is_numerical(self.x):
             return best_ticks(cached_min(self.x), cached_max(self.x), most=self.width // self.xticklabel_length)
-        else:  # nominal
+        else:  # categorical
             values = sorted([str(v) for v in set(self.x)])  # note this may not fit depending on the width of the figure
             x_axis_width = self.width - self._yax_width()
             if len(values)*self.xticklabel_length > x_axis_width:
@@ -234,6 +234,7 @@ class Figure:
             marker = colored(text=marker, color=color)
         if label:
             self._labels.append((marker, label))
+        self._clear_scale_cache()
         return x, y, marker, color, label
 
     def scatter(self, x, y=None, marker="•", color=None, label=None):
@@ -284,15 +285,15 @@ class Figure:
     def image(self, image, vmin=None, vmax=None, cmap="block", origin="upper"):
         cmap = "ascii" if self.ascii_only else cmap
         # guess correct value range
-        if (image >= 0).all() and (image <= 1).all():  # between 0 and 1 inclusive
-            vmin = 0 if vmin is None else vmin
-            vmax = 1 if vmax is None else vmax
-        elif image.dtype == np.uint8:  # between 0 and 255 inclusive, probably a picture
+        # if (image >= 0).all() and (image <= 1).all():  # between 0 and 1 inclusive
+        #     vmin = 0 if vmin is None else vmin
+        #     vmax = 1 if vmax is None else vmax
+        if image.dtype == np.uint8:  # probably a picture
             vmin = 0 if vmin is None else vmin
             vmax = 255 if vmax is None else vmax
         else:
-            vmin = image.flatten().cached_min() if vmin is None else vmin
-            vmax = image.flatten().cached_max() if vmax is None else vmax
+            vmin = image.flatten().min() if vmin is None else vmin
+            vmax = image.flatten().max() if vmax is None else vmax
         self._y_origin = origin
 
         def draw_image(x, y):
@@ -307,6 +308,7 @@ class Figure:
             self._canvas[ymin:ymax+1, xmin:xmax+1] = drawn
 
         self._plots.append(partial(draw_image, x=tuple(range(image.shape[1])), y=tuple(range(image.shape[0]))))
+        self._clear_scale_cache()
 
     def draw(self):
         # 8 (ANSI escape char) + 1 (marker) + 8 (ANSI escape char) = 17
@@ -332,6 +334,9 @@ class Figure:
     def clear(self):
         self._plots = []
         self._labels = []
+        self._clear_scale_cache()
+
+    def _clear_scale_cache(self):
         self._xscale.cache_clear()
         self._yscale.cache_clear()
         self._xtick_values.cache_clear()

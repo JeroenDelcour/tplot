@@ -10,7 +10,10 @@ class Scale:
 
     def transform(self, values):
         if isinstance(values, np.ndarray):
-            return self._transform(values)
+            if isinstance(self, CategoricalScale):
+                return np.vectorize(self._transform)(values)
+            else:
+                return self._transform(values)
         elif isinstance(values, str):
             return self._transform(values)
         elif isinstance(values, Iterable):
@@ -31,6 +34,9 @@ class LinearScale(Scale):
     def fit(self, values, target_min, target_max):
         original_min = cached_min(tuple(values))
         original_max = cached_max(tuple(values))
+        if original_min == original_max:
+            original_min -= 1
+            original_max += 1
         original_range = original_max - original_min
         target_range = target_max - target_min
 
@@ -39,7 +45,7 @@ class LinearScale(Scale):
         self._transform = _transform
 
 
-class NominalScale(Scale):
+class CategoricalScale(Scale):
     """Maps unique values to real values."""
 
     def __init__(self):
@@ -48,10 +54,12 @@ class NominalScale(Scale):
     def fit(self, values, target_min=0, target_max=None):
         values = [str(v) for v in values]
         idxmap = {value: i for i, value in enumerate(sorted(set(values)))}
-        if target_max is not None and target_max > len(idxmap):
-            scale = LinearScale()
-            scale.fit(list(idxmap.values()), target_min, target_max)
-            idxmap = {value: scale.transform([i])[0] for value, i in idxmap.items()}
+        if target_min == 0 and target_max is None:
+            target_max = len(idxmap) - 1
+        scale = LinearScale()
+        scale.fit(list(idxmap.values()), target_min, target_max)
+        idxmap = {value: scale.transform([i])[0] for value, i in idxmap.items()}
 
-            # return [idxmap[str(value)] for value in values]
-        self._transform = idxmap.get
+        def _transform(value):
+            return idxmap[str(value)]
+        self._transform = _transform

@@ -3,8 +3,8 @@ from .scales import LinearScale
 from functools import lru_cache
 
 COLORMAPS = {
-    "ascii": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "[::-1],
-    "ascii_simple": " .:-=+*#%@",
+    # "ascii": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "[::-1],
+    "ascii": " .:-=+*#%@",
     "block": "█▓▒░ "[::-1]
 }
 COLORMAPS = {k: np.array(tuple(v)) for k, v in COLORMAPS.items()}
