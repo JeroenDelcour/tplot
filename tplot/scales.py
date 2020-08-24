@@ -1,7 +1,6 @@
 from numbers import Number
 from typing import Iterable
 import numpy as np
-from .utils import cached_min, cached_max
 
 
 class Scale:
@@ -32,8 +31,8 @@ class LinearScale(Scale):
         super().__init__()
 
     def fit(self, values, target_min, target_max):
-        original_min = cached_min(tuple(values))
-        original_max = cached_max(tuple(values))
+        original_min = min(tuple(values))
+        original_max = max(tuple(values))
         if original_min == original_max:
             original_min -= 1
             original_max += 1

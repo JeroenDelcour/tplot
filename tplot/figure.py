@@ -1,10 +1,11 @@
-from colorama import init
 from termcolor import colored
-from functools import lru_cache, cached_property, partial, wraps
+from functools import lru_cache, partial
 import numpy as np
 from shutil import get_terminal_size
 from typing import Optional
 from warnings import warn
+from colorama import init
+init()
 
 from .scales import *
 from .utils import *
@@ -145,7 +146,7 @@ class Figure:
     @lru_cache(maxsize=1)
     def _ytick_values(self):
         if is_numerical(self.y):
-            return best_ticks(cached_min(self.y), cached_max(self.y), most=self.height // 3)
+            return best_ticks(min(self.y), max(self.y), most=self.height // 3)
         else:  # nominal
             values = sorted([str(v) for v in set(self.y)])
             y_axis_height = self.height - bool(self.title) - self._xax_height()
@@ -157,7 +158,7 @@ class Figure:
     @lru_cache(maxsize=1)
     def _xtick_values(self):
         if is_numerical(self.x):
-            return best_ticks(cached_min(self.x), cached_max(self.x), most=self.width // self.xticklabel_length)
+            return best_ticks(min(self.x), max(self.x), most=self.width // self.xticklabel_length)
         else:  # categorical
             values = sorted([str(v) for v in set(self.x)])  # note this may not fit depending on the width of the figure
             x_axis_width = self.width - self._yax_width()

@@ -14,17 +14,7 @@ def unicode_supported(test_str="┌┬┐╔╦╗╒╤╕╓╥╖│║─═
         return False
 
 
-@lru_cache
-def cached_min(values):
-    return min(values)
-
-
-@lru_cache
-def cached_max(values):
-    return max(values)
-
-
-def is_numerical(data: Iterable[Number], /) -> bool:
+def is_numerical(data: Iterable[Number]) -> bool:
     return all([isinstance(value, Number) for value in data])
 
 
