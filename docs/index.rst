@@ -18,25 +18,29 @@ Features
 Installation
 ------------
 
-`tplot` is available on [PyPi](https://test.pypi.org/project/tplot/):
-```bash
-pip install tplot
-```
+.. highlight:: bash
+
+`tplot` is available on `PyPi <https://pypi.org/project/tplot/>`_::
+   
+   pip install tplot
 
 
 Basic usage
 -----------
 
-```python
+.. highlight:: python
+
+.. code-block::
+
    import tplot
    fig = tplot.Figure()
    fig.scatter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
    fig.show()
-```
 
-Prints:
+.. highlight:: none
 
-```
+Prints::
+
    10┤                                                                            •
      │                                                                             
      │                                                                    •        
@@ -60,4 +64,36 @@ Prints:
     0┤•                                                                            
       ┬───────┬──────┬───────┬──────┬───────┬───────┬──────┬───────┬──────┬───────┬
       0       1      2       3      4       5       6      7       8      9      10
-```
+
+To get a string representation of the figure instead of printing to `std`, simply use ``str(fig)``.
+
+
+Advanced usage
+--------------
+
+.. highlight:: python
+
+.. code-block::
+
+   import tplot
+   fig = tplot.Figure(title=""
+
+API reference
+-------------
+
+.. automodule:: tplot.figure
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`search`

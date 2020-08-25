@@ -7,6 +7,7 @@ from typing import Generator, Iterable
 
 
 def unicode_supported(test_str="┌┬┐╔╦╗╒╤╕╓╥╖│║─═├┼┤╠╬╣╞╪╡╟╫╢└┴┘╚╩╝╘╧╛╙╨╜"):
+    """ Tries to determine if unicode is supported by encoding an example string containing unicode characters. """
     try:
         test_str.encode(sys.stdout.encoding)
         return True
@@ -14,11 +15,12 @@ def unicode_supported(test_str="┌┬┐╔╦╗╒╤╕╓╥╖│║─═
         return False
 
 
-def is_numerical(data: Iterable[Number]) -> bool:
+def _is_numerical(data: Iterable[Number]) -> bool:
+    """ Returns True if all values in given iterable are numbers. """
     return all([isinstance(value, Number) for value in data])
 
 
-def plot_line_segment(x0: int, y0: int, x1: int, y1: int) -> Generator[Iterable[int], None, None]:
+def _plot_line_segment(x0: int, y0: int, x1: int, y1: int) -> Generator[Iterable[int], None, None]:
     """Plot line segment using Bresenham algorithm. Yields (x, y)."""
     dx = x1 - x0
     dy = y1 - y0
@@ -46,12 +48,12 @@ def plot_line_segment(x0: int, y0: int, x1: int, y1: int) -> Generator[Iterable[
         D += 2*dy
 
 
-def round_away_from_zero(value: float) -> int:
+def _round_away_from_zero(value: float) -> int:
     return math.ceil(value) if value >= 0 else math.floor(value)
 
 
-def best_ticks(min_: float, max_: float, most: int) -> list:
-    """Returns a list of suitable tick values."""
+def _best_ticks(min_: float, max_: float, most: int) -> list:
+    """ Returns a list of suitable tick values. """
     # find step size
     range_ = max_ - min_
     if range_ == 0:
@@ -68,47 +70,4 @@ def best_ticks(min_: float, max_: float, most: int) -> list:
     start = step * round(abs(min_) / step) * sign
     if start > min_:
         start -= step
-    return [start+i*step for i in range(round_away_from_zero((max_-start)/step)+1)]
-
-
-def get_braille(s):
-    """
-    `s` is a string of '1's and '0's specifying which dots in the desired braille character must be on ('1')
-    and which must be off ('0').
-    Dots in the 2x8 braille matrix are ordered top-down, left-to-right, i.e:
-
-    a •• e
-    b •• f
-    c •• g
-    d •• h
-
-    Schematic example:
-
-    •    10
-     •   01
-    •• = 11
-     •   01
-
-    ⢵ = '10100111'
-
-    More examples:
-    '10000000' = ⠁ (only top left dot)
-    '00011110' = ⡸
-    '11001111' = ⢻
-    '11111111' = ⣿
-    '00000000' = ⠀ (empty braille character)
-
-    For more info on the interesting relationship between binary and unicode braille dot ordering, see: https://en.wikipedia.org/wiki/Braille_Patterns#Identifying,_naming_and_ordering
-    """
-    s = s[:3] + s[4:7] + s[3] + s[7]  # rearrange ISO/TR 11548-1 dot order to something more managable
-    return chr(10240 + int(s[::-1], 2))
-
-
-def test_braille():
-    assert(get_braille('10000000') == '⠁')
-    assert(get_braille('11001111') == '⢻')
-    assert(get_braille('11001111') == '⢻')
-    assert(get_braille('11111111') == '⣿')
-    assert(get_braille('00011110') == '⡸')
-    assert(get_braille('00000000') == '⠀')
-    print('All tests completed succesfully.')
+    return [start+i*step for i in range(_round_away_from_zero((max_-start)/step)+1)]

@@ -4,6 +4,8 @@ import numpy as np
 
 
 class Scale:
+    """ Base `Scale` class. """
+
     def __init__(self):
         pass
 
@@ -25,12 +27,13 @@ class Scale:
 
 
 class LinearScale(Scale):
-    """Transforms real values to real values linearly."""
+    """ Transform numerical values linearly. """
 
     def __init__(self):
         super().__init__()
 
     def fit(self, values, target_min, target_max):
+        """ Fit transform to linearly scale `values` to `target_min` and `target_max`. """
         original_min = min(tuple(values))
         original_max = max(tuple(values))
         if original_min == original_max:
@@ -45,12 +48,13 @@ class LinearScale(Scale):
 
 
 class CategoricalScale(Scale):
-    """Maps unique values to real values."""
+    """ Transform arbitrary values (e.g. strings) to numerical values. """
 
     def __init__(self):
         super().__init__()
 
     def fit(self, values, target_min=0, target_max=None):
+        """ Fit transform to map `values` to numbers evenly spaced from `target_min` to `target_max`. """
         values = [str(v) for v in values]
         idxmap = {value: i for i, value in enumerate(sorted(set(values)))}
         if target_min == 0 and target_max is None:
