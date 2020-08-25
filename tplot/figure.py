@@ -62,7 +62,7 @@ class Figure:
         self._y_origin = "lower"
 
         self.ascii_only = ascii
-        if self.ascii_only is None:
+        if not self.ascii_only:
             self.ascii_only = not utils.unicode_supported()
 
         term_width, term_height = get_terminal_size(fallback=(80, 24))
