@@ -50,7 +50,7 @@ def main():
         sys.stdout.write(f"\x1b[{scrollup}A")
         fig.show()
         dt = (time() - t0) / 1000
-        # sleep(1/32 - dt)
+        sleep(1/32 - dt)
 
 
 main()
