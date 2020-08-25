@@ -28,9 +28,7 @@ Installation
 Basic usage
 -----------
 
-.. highlight:: python
-
-.. code-block::
+.. code-block:: python
 
    import tplot
    fig = tplot.Figure()
@@ -71,9 +69,7 @@ To get a string representation of the figure instead of printing to `std`, simpl
 Advanced usage
 --------------
 
-.. highlight:: python
-
-.. code-block::
+.. code-block:: python
 
    import tplot
    fig = tplot.Figure(title=""

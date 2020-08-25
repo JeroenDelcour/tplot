@@ -1,14 +1,15 @@
-from .img2ascii import img2ascii
-from . import utils
-from .scales import *
+from colorama import init
+init()
 from termcolor import colored
 from functools import lru_cache, partial
 import numpy as np
 from shutil import get_terminal_size
 from typing import Optional
 from warnings import warn
-from colorama import init
-init()
+
+from .img2ascii import img2ascii
+from . import utils
+from .scales import *
 
 
 ASCII_FALLBACK = {
