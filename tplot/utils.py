@@ -6,8 +6,8 @@ import sys
 from typing import Generator, Iterable
 
 
-def unicode_supported(test_str="┌┬┐╔╦╗╒╤╕╓╥╖│║─═├┼┤╠╬╣╞╪╡╟╫╢└┴┘╚╩╝╘╧╛╙╨╜"):
-    """ Tries to determine if unicode is supported by encoding an example string containing unicode characters. """
+def unicode_supported(test_str="─│┤┬┌┐└┘█•·"):
+    """ Tries to determine if unicode is supported by encoding a test string containing unicode characters. """
     try:
         test_str.encode(sys.stdout.encoding)
         return True

@@ -62,7 +62,7 @@ class Figure:
 
         self.ascii_only = ascii
         if self.ascii_only is None:
-            self.ascii_only = not unicode_supported()
+            self.ascii_only = not utils.unicode_supported()
 
         term_width, term_height = get_terminal_size(fallback=(80, 24))
         term_height -= 1  # room for prompt
