@@ -1,15 +1,14 @@
+from .scales import *
+from . import utils
+from .img2ascii import img2ascii
+from warnings import warn
+from typing import Optional
+from shutil import get_terminal_size
+import numpy as np
+from functools import lru_cache, partial
+from termcolor import colored
 from colorama import init
 init()
-from termcolor import colored
-from functools import lru_cache, partial
-import numpy as np
-from shutil import get_terminal_size
-from typing import Optional
-from warnings import warn
-
-from .img2ascii import img2ascii
-from . import utils
-from .scales import *
 
 
 ASCII_FALLBACK = {
@@ -161,7 +160,8 @@ class Figure:
         if utils._is_numerical(self._x):
             return utils._best_ticks(min(self._x), max(self._x), most=self.width // self._xticklabel_length)
         else:  # categorical
-            values = sorted([str(v) for v in set(self._x)])  # note this may not fit depending on the width of the figure
+            # note this may not fit depending on the width of the figure
+            values = sorted([str(v) for v in set(self._x)])
             x_axis_width = self.width - self._yax_width()
             if len(values)*self._xticklabel_length > x_axis_width:
                 raise ValueError(
@@ -324,8 +324,17 @@ class Figure:
                 start, end = sorted([origin, xi])
                 self._canvas[round(yi), round(start):round(end)+1] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
-    
+
     def text(self, x, y, text: str, color: Optional[str] = None):
+        """
+        Add text.
+
+        Args:
+            x: x location (text is left-aligned).
+            y: y location.
+            text: Text to draw.
+            color: Color of text. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
+        """
         if color and not self.ascii_only:
             text = colored(text, color)
 
