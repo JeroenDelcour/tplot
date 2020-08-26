@@ -66,14 +66,6 @@ Prints::
 To get a string representation of the figure instead of printing to `std`, simply use ``str(fig)``.
 
 
-Advanced usage
---------------
-
-.. code-block:: python
-
-   import tplot
-   fig = tplot.Figure(title=""
-
 API reference
 -------------
 

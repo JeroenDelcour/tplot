@@ -1,7 +1,7 @@
 tplot
 =====
 
-`tplot` is a Python module for creating text-based graphs. Useful for visualizing data to the terminal or log files.
+tplot is a Python module for creating text-based graphs. Useful for visualizing data to the terminal or log files.
 
 Features
 --------
@@ -18,7 +18,7 @@ Features
 Installation
 ------------
 
-`tplot` is available on [PyPi](https://test.pypi.org/project/tplot/):
+tplot is available on [PyPi](https://pypi.org/project/tplot/):
 ```bash
 pip install tplot
 ```
@@ -28,38 +28,38 @@ Basic usage
 -----------
 
 ```python
-   import tplot
-   fig = tplot.Figure()
-   fig.scatter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-   fig.show()
+import tplot
+fig = tplot.Figure()
+fig.scatter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+fig.show()
 ```
 
 Prints:
 
 ```
-   10┤                                                                            •
-     │                                                                             
-     │                                                                    •        
-     │                                                                             
-    8┤                                                             •               
-     │                                                                             
-     │                                                     •                       
-     │                                                                             
-    6┤                                              •                              
-     │                                                                             
-     │                                      •                                      
-     │                                                                             
-    4┤                              •                                              
-     │                                                                             
-     │                       •                                                     
-     │                                                                             
-    2┤               •                                                             
-     │                                                                             
-     │        •                                                                    
-     │                                                                             
-    0┤•                                                                            
-      ┬───────┬──────┬───────┬──────┬───────┬───────┬──────┬───────┬──────┬───────┬
-      0       1      2       3      4       5       6      7       8      9      10
+10┤                                                                            •
+  │                                                                             
+  │                                                                    •        
+  │                                                                             
+ 8┤                                                             •               
+  │                                                                             
+  │                                                     •                       
+  │                                                                             
+ 6┤                                              •                              
+  │                                                                             
+  │                                      •                                      
+  │                                                                             
+ 4┤                              •                                              
+  │                                                                             
+  │                       •                                                     
+  │                                                                             
+ 2┤               •                                                             
+  │                                                                             
+  │        •                                                                    
+  │                                                                             
+ 0┤•                                                                            
+   ┬───────┬──────┬───────┬──────┬───────┬───────┬──────┬───────┬──────┬───────┬
+   0       1      2       3      4       5       6      7       8      9      10
 ```
 
 
