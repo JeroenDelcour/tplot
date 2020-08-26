@@ -120,3 +120,10 @@ class TestIntegration(unittest.TestCase):
         for i, color in enumerate(["red", "green", "blue", "yellow", "magenta", "cyan", "grey", "white"]):
             fig.scatter([i], [i], color=color, label=color)
         fig.show()
+
+    def test_text(self):
+        fig = tplot.Figure()
+        fig.text(x=4, y=0, text="testing text")
+        fig.text(x=4, y=-1, text="testing colored text", color="red")
+        fig.text(x=9, y=8, text="testing text at right boundary")
+        fig.show()

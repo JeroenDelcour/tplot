@@ -324,6 +324,20 @@ class Figure:
                 start, end = sorted([origin, xi])
                 self._canvas[round(yi), round(start):round(end)+1] = marker
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
+    
+    def text(self, x, y, text: str, color: Optional[str] = None):
+        if color and not self.ascii_only:
+            text = colored(text, color)
+
+        def draw_text(x, y, text):
+            x0 = round(self._xscale().transform(x[0]))
+            y0 = round(self._yscale().transform(y[0]))
+            for i, char in enumerate(text):
+                if x0+i >= self.width:
+                    break
+                self._canvas[y0, x0+i] = char
+
+        self._plots.append(partial(draw_text, x=[x], y=[y], text=text))
 
     def image(self, image: np.ndarray, vmin: Optional[float] = None, vmax: Optional[float] = None, cmap: str = "block", origin: str = "upper"):
         """
