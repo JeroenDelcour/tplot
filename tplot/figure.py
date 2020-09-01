@@ -1,6 +1,7 @@
 from .scales import *
 from . import utils
 from .img2ascii import img2ascii
+from .braille import is_braille, draw_braille
 from warnings import warn
 from typing import Optional
 from shutil import get_terminal_size
@@ -232,7 +233,10 @@ class Figure:
         if y is None:  # only y value provided
             x, y = range(len(x)), x
         assert(len(x) == len(y))
-        marker = marker[0]
+        if marker == "braille":
+            marker = "⠄"
+        else:
+            marker = marker[0]
         if color and not self.ascii_only:
             marker = colored(text=marker, color=color)
         if label:
@@ -255,6 +259,8 @@ class Figure:
 
         def draw_scatter(x, y, marker):
             for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
+                if is_braille(marker):
+                    marker = draw_braille(xi, yi, self._canvas[round(yi), round(xi)])
                 self._canvas[round(yi), round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
@@ -275,8 +281,16 @@ class Figure:
             xs = self._xscale().transform(x)
             ys = self._yscale().transform(y)
             for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
-                for x, y in utils._plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
-                    self._canvas[y, x] = marker
+                if is_braille(marker):
+                    for x, y in utils._plot_line_segment(round(x0*2), round(y0*4), round(x1*2), round(y1*4)):
+                        x = x/2
+                        y = y/4
+                        self._canvas[int(y), int(x)] = draw_braille(x,
+                                                                        y,
+                                                                        self._canvas[int(y), int(x)])
+                else:
+                    for x, y in utils._plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
+                        self._canvas[y, x] = marker
         self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
 
     def bar(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "█", color: Optional[str] = None, label: Optional[str] = None):
