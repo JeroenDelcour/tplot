@@ -237,7 +237,7 @@ class Figure:
             marker = "⠄"
         else:
             marker = marker[0]
-        if color and not self.ascii_only:
+        if color and not self.ascii_only and not is_braille(marker):
             marker = colored(text=marker, color=color)
         if label:
             self._labels.append((marker, label))
@@ -285,9 +285,12 @@ class Figure:
                     for x, y in utils._plot_line_segment(round(x0*2), round(y0*4), round(x1*2), round(y1*4)):
                         x = x/2
                         y = y/4
-                        self._canvas[utils._round_half_away_from_zero(y), utils._round_half_away_from_zero(x)] = draw_braille(x,
-                                                                        y,
-                                                                        self._canvas[utils._round_half_away_from_zero(y), utils._round_half_away_from_zero(x)])
+                        x_canvas = utils._round_half_away_from_zero(x)
+                        y_canvas = utils._round_half_away_from_zero(y)
+                        character = draw_braille(x, y, self._canvas[y_canvas, x_canvas])
+                        if color:
+                            character = colored(character, color)
+                        self._canvas[y_canvas, x_canvas] = character
                 else:
                     for x, y in utils._plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
                         self._canvas[y, x] = marker

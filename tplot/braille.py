@@ -71,6 +71,8 @@ def draw_braille(x: float, y: float, canvas_str=None):
     x = round((x + 0.500000001) % 1)  # 0 or 1. 0.500000001 so it rounds half up.
     y = 3 - round((-y + 0.375000001) % 1 * 4) % 4  # 0, 1, 2, or 3
     out = braille_from_xy(x, y)
-    if is_braille(canvas_str):
-        out = combine_braille([out, canvas_str])
+    for character in canvas_str:
+        if is_braille(character):
+            out = combine_braille([out, character])
+            break
     return out
