@@ -15,7 +15,7 @@ anscombeB = list(zip(*[(x, y) for x, y in sorted(zip(*anscombeB))]))
 
 fig = tplot.Figure()
 fig.line(*anscombeA, marker="braille", label="Anscombe A", color="red")
-fig.line(*anscombeB, marker="braille", label="Anscombe A", color="blue")
+fig.line(*anscombeB, marker="braille", label="Anscombe B", color="blue")
 # fig.scatter(x=anscombeA[0], y=[y+0.05 for y in anscombeA[1]], marker="braille", label="Anscombe A")
 # fig.scatter(x=[0], y=[8], marker="braille")
 # fig.line(x=range(10), y=[1]*10, marker="braille")
