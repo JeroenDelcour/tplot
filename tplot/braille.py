@@ -68,14 +68,8 @@ def draw_braille(x: float, y: float, canvas_str=None):
     Returns braille character for given x, y position.
     If canvas_str is already a braille character, the new braille dot will be added to it.
     """
-    print(x, y)
-    x -= int(x)
-    x = round(x + 0.5)  # 0 or 1
-    y = round(y) - y
-    print(y)
-    y = round((y + 0.5) * 3)  # 0, 1, 2, or 3
-    print(x, y)
-    print("--")
+    x = round((x + 0.500000001) % 1)  # 0 or 1. 0.500000001 so it rounds half up.
+    y = 3 - round((-y + 0.375000001) % 1 * 4) % 4  # 0, 1, 2, or 3
     out = braille_from_xy(x, y)
     if is_braille(canvas_str):
         out = combine_braille([out, canvas_str])

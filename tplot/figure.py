@@ -285,9 +285,9 @@ class Figure:
                     for x, y in utils._plot_line_segment(round(x0*2), round(y0*4), round(x1*2), round(y1*4)):
                         x = x/2
                         y = y/4
-                        self._canvas[int(y), int(x)] = draw_braille(x,
+                        self._canvas[utils._round_half_away_from_zero(y), utils._round_half_away_from_zero(x)] = draw_braille(x,
                                                                         y,
-                                                                        self._canvas[int(y), int(x)])
+                                                                        self._canvas[utils._round_half_away_from_zero(y), utils._round_half_away_from_zero(x)])
                 else:
                     for x, y in utils._plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
                         self._canvas[y, x] = marker
