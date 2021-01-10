@@ -66,4 +66,4 @@ Prints:
 Documentation
 -------------
 
-Full API reference is available on [readthedocs](https://tplot.readthedocs.io/en/latest/).
+Documentation is available on [readthedocs](https://tplot.readthedocs.io/en/latest/).

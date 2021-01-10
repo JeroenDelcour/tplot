@@ -66,7 +66,7 @@ Prints::
 To get a string representation of the figure instead of printing to `std`, simply use ``str(fig)``.
 
 
-API reference
+Reference
 -------------
 
 .. automodule:: tplot.figure
