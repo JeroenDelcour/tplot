@@ -52,6 +52,10 @@ def _round_away_from_zero(value: float) -> int:
     return math.ceil(value) if value >= 0 else math.floor(value)
 
 
+def _round_half_away_from_zero(num: float) -> int:
+    return ((num > 0) - (num < 0)) * int(abs(num) + 0.5)
+
+
 def _best_ticks(min_: float, max_: float, most: int) -> list:
     """ Returns a list of suitable tick values. """
     # find step size

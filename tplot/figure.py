@@ -1,6 +1,7 @@
 from .scales import *
 from . import utils
 from .img2ascii import img2ascii
+from .braille import is_braille, draw_braille
 from warnings import warn
 from typing import Optional
 from shutil import get_terminal_size
@@ -232,7 +233,10 @@ class Figure:
         if y is None:  # only y value provided
             x, y = range(len(x)), x
         assert(len(x) == len(y))
-        marker = marker[0]
+        if marker == "braille":
+            marker = "⠄" if not self.ascii_only else "."
+        else:
+            marker = marker[0]
         if color and not self.ascii_only:
             marker = colored(text=marker, color=color)
         if label:
@@ -247,7 +251,7 @@ class Figure:
         Args:
             x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw points.
+            marker: Marker used to draw points. Set to "braille" to use braille characters.
             color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
             label: Label to use for legend.
         """
@@ -255,17 +259,25 @@ class Figure:
 
         def draw_scatter(x, y, marker):
             for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
-                self._canvas[round(yi), round(xi)] = marker
+                if not self.ascii_only and any((is_braille(char) for char in marker)):
+                    xi = utils._round_half_away_from_zero(xi)
+                    yi = utils._round_half_away_from_zero(yi)
+                    marker = draw_braille(xi, yi, self._canvas[yi, xi])
+                    if color:
+                        marker = colored(marker, color)
+                    self._canvas[yi, xi] = marker
+                else:
+                    self._canvas[round(yi), round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
-    def line(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "·", color: Optional[str] = None, label: Optional[str] = None):
+    def line(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "braille", color: Optional[str] = None, label: Optional[str] = None):
         """
         Add line plot.
 
         Args:
             x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw lines.
+            marker: Marker used to draw lines. Set to "braille" to use braille characters.
             color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
             label: Label to use for legend.
         """
@@ -275,8 +287,19 @@ class Figure:
             xs = self._xscale().transform(x)
             ys = self._yscale().transform(y)
             for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
-                for x, y in utils._plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
-                    self._canvas[y, x] = marker
+                if not self.ascii_only and any((is_braille(char) for char in marker)):
+                    for x, y in utils._plot_line_segment(round(x0*2), round(y0*4), round(x1*2), round(y1*4)):
+                        x = x/2
+                        y = y/4
+                        x_canvas = utils._round_half_away_from_zero(x)
+                        y_canvas = utils._round_half_away_from_zero(y)
+                        marker = draw_braille(x, y, self._canvas[y_canvas, x_canvas])
+                        if color:
+                            marker = colored(marker, color)
+                        self._canvas[y_canvas, x_canvas] = marker
+                else:
+                    for x, y in utils._plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
+                        self._canvas[y, x] = marker
         self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
 
     def bar(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "█", color: Optional[str] = None, label: Optional[str] = None):
@@ -286,13 +309,14 @@ class Figure:
         Args:
             x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw bars.
+            marker: Marker used to draw bars. Set to "braille" to use braille characters.
             color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
             label: Label to use for legend.
         """
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_bar(x, y, marker):
+            marker = marker.replace("⠄", "⡇")  # in case of braille
             if utils._is_numerical(self._y):
                 origin = self._yscale().transform(min(self._ytick_values(), key=abs))
             else:
@@ -309,13 +333,14 @@ class Figure:
         Args:
             x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw bars.
+            marker: Marker used to draw bars. Set to "braille" to use braille characters.
             color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
             label: Label to use for legend.
         """
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_hbar(x, y, marker):
+            marker = marker.replace("⠄", "⠒")  # in case of braille
             if utils._is_numerical(self._x):
                 origin = self._xscale().transform(min(self._xtick_values(), key=abs))
             else:
@@ -389,6 +414,9 @@ class Figure:
         self._clear_scale_cache()
 
     def _draw(self):
+        if not self._plots:
+            raise ValueError("No plots to draw.")
+
         # 8 (ANSI escape char) + 1 (marker) + 8 (ANSI escape char) = 17
         self._canvas = np.empty((self.height, self.width), dtype="U17")
         self._canvas[:] = " "
@@ -422,10 +450,10 @@ class Figure:
         self._ytick_values.cache_clear()
         self._yax_width.cache_clear()
 
-    def __repr__(self):
+    def __str__(self):
         self._draw()
         return "\n".join(["".join(row) for row in self._canvas.tolist()])
 
     def show(self):
         """ Show figure. """
-        print(self)
+        print(str(self))

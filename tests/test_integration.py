@@ -122,8 +122,24 @@ class TestIntegration(unittest.TestCase):
         fig.show()
 
     def test_text(self):
-        fig = tplot.Figure()
+        fig = tplot.Figure(width=80, height=24)
         fig.text(x=4, y=0, text="testing text")
         fig.text(x=4, y=-1, text="testing colored text", color="red")
         fig.text(x=9, y=8, text="testing text at right boundary")
         fig.show()
+    
+    def test_braille(self):
+        fig = tplot.Figure(width=80, height=24)
+        for data in datasets:
+            fig.clear()
+            fig.scatter(data[0], data[1], marker="braille", color="red")
+            fig.show()
+            fig.clear()
+            fig.line(data[0], data[1], marker="braille", color="green")
+            fig.show()
+            fig.clear()
+            fig.bar(data[0], data[1], marker="braille", color="blue")
+            fig.show()
+            fig.clear()
+            fig.hbar(data[0], data[1], marker="braille")
+            fig.show()
