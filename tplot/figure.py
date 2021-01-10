@@ -234,7 +234,7 @@ class Figure:
             x, y = range(len(x)), x
         assert(len(x) == len(y))
         if marker == "braille":
-            marker = "⠄"
+            marker = "⠄" if not self.ascii_only else "."
         else:
             marker = marker[0]
         if color and not self.ascii_only:
@@ -259,9 +259,15 @@ class Figure:
 
         def draw_scatter(x, y, marker):
             for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
-                if any((is_braille(character) for character in marker)):
-                    marker = draw_braille(xi, yi, self._canvas[round(yi), round(xi)])
-                self._canvas[round(yi), round(xi)] = marker
+                if not self.ascii_only and any((is_braille(char) for char in marker)):
+                    xi = utils._round_half_away_from_zero(xi)
+                    yi = utils._round_half_away_from_zero(yi)
+                    marker = draw_braille(xi, yi, self._canvas[yi, xi])
+                    if color:
+                        marker = colored(marker, color)
+                    self._canvas[yi, xi] = marker
+                else:
+                    self._canvas[round(yi), round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
     def line(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "·", color: Optional[str] = None, label: Optional[str] = None):
@@ -281,16 +287,16 @@ class Figure:
             xs = self._xscale().transform(x)
             ys = self._yscale().transform(y)
             for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
-                if any((is_braille(character) for character in marker)):
+                if not self.ascii_only and any((is_braille(char) for char in marker)):
                     for x, y in utils._plot_line_segment(round(x0*2), round(y0*4), round(x1*2), round(y1*4)):
                         x = x/2
                         y = y/4
                         x_canvas = utils._round_half_away_from_zero(x)
                         y_canvas = utils._round_half_away_from_zero(y)
-                        character = draw_braille(x, y, self._canvas[y_canvas, x_canvas])
+                        marker = draw_braille(x, y, self._canvas[y_canvas, x_canvas])
                         if color:
-                            character = colored(character, color)
-                        self._canvas[y_canvas, x_canvas] = character
+                            marker = colored(marker, color)
+                        self._canvas[y_canvas, x_canvas] = marker
                 else:
                     for x, y in utils._plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
                         self._canvas[y, x] = marker
@@ -310,6 +316,7 @@ class Figure:
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_bar(x, y, marker):
+            marker = marker.replace("⠄", "⡇")  # in case of braille
             if utils._is_numerical(self._y):
                 origin = self._yscale().transform(min(self._ytick_values(), key=abs))
             else:
@@ -333,6 +340,7 @@ class Figure:
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_hbar(x, y, marker):
+            marker = marker.replace("⠄", "⠒")  # in case of braille
             if utils._is_numerical(self._x):
                 origin = self._xscale().transform(min(self._xtick_values(), key=abs))
             else:
