@@ -251,7 +251,7 @@ class Figure:
         Args:
             x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw points.
+            marker: Marker used to draw points. Set to "braille" to use braille characters.
             color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
             label: Label to use for legend.
         """
@@ -270,14 +270,14 @@ class Figure:
                     self._canvas[round(yi), round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
-    def line(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "·", color: Optional[str] = None, label: Optional[str] = None):
+    def line(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "braille", color: Optional[str] = None, label: Optional[str] = None):
         """
         Add line plot.
 
         Args:
             x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw lines.
+            marker: Marker used to draw lines. Set to "braille" to use braille characters.
             color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
             label: Label to use for legend.
         """
@@ -309,7 +309,7 @@ class Figure:
         Args:
             x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw bars.
+            marker: Marker used to draw bars. Set to "braille" to use braille characters.
             color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
             label: Label to use for legend.
         """
@@ -333,7 +333,7 @@ class Figure:
         Args:
             x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw bars.
+            marker: Marker used to draw bars. Set to "braille" to use braille characters.
             color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
             label: Label to use for legend.
         """
