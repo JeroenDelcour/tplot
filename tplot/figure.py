@@ -259,7 +259,7 @@ class Figure:
 
         def draw_scatter(x, y, marker):
             for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
-                if any([is_braille(character) for character in marker]):
+                if any((is_braille(character) for character in marker)):
                     marker = draw_braille(xi, yi, self._canvas[round(yi), round(xi)])
                 self._canvas[round(yi), round(xi)] = marker
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
@@ -281,7 +281,7 @@ class Figure:
             xs = self._xscale().transform(x)
             ys = self._yscale().transform(y)
             for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
-                if any([is_braille(character) for character in marker]):
+                if any((is_braille(character) for character in marker)):
                     for x, y in utils._plot_line_segment(round(x0*2), round(y0*4), round(x1*2), round(y1*4)):
                         x = x/2
                         y = y/4
@@ -406,6 +406,9 @@ class Figure:
         self._clear_scale_cache()
 
     def _draw(self):
+        if not self._plots:
+            raise ValueError("No plots to draw.")
+
         # 8 (ANSI escape char) + 1 (marker) + 8 (ANSI escape char) = 17
         self._canvas = np.empty((self.height, self.width), dtype="U17")
         self._canvas[:] = " "
@@ -439,10 +442,10 @@ class Figure:
         self._ytick_values.cache_clear()
         self._yax_width.cache_clear()
 
-    def __repr__(self):
+    def __str__(self):
         self._draw()
         return "\n".join(["".join(row) for row in self._canvas.tolist()])
 
     def show(self):
         """ Show figure. """
-        print(self)
+        print(str(self))
