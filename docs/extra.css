@@ -1,0 +1,15 @@
+/* Indentation. */
+div.doc-contents {
+  padding-left: 25px;
+  margin-bottom: 60px;
+}
+.doc-class {
+    border-top: solid 3px #ccc;
+}
+.doc-heading {
+    border-left: solid 3px #ccc;
+    padding: 6px;
+}
+.doc-heading code {
+    padding: 0;
+}

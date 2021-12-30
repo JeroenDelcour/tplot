@@ -1,7 +1,0 @@
-colorama==0.4.3
-numpy==1.19.1
-pockets==0.9.1
-six==1.15.0
-sphinxcontrib-napoleon==0.7
-termcolor==1.1.0
-tplot==0.0.4
