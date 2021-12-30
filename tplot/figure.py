@@ -9,6 +9,7 @@ import numpy as np
 from functools import lru_cache, partial
 from termcolor import colored
 from colorama import init
+
 init()
 
 
@@ -23,13 +24,13 @@ ASCII_FALLBACK = {
     "┘": "+",
     "█": "#",
     "•": "*",
-    "·": "."
+    "·": ".",
 }
 
 
 class Figure:
     """
-    Figure used to draw plots.
+    Figure to draw plots onto.
 
     Args:
         xlabel: Label for the x axis.
@@ -37,29 +38,40 @@ class Figure:
         title: Title of the figure.
         width: Width of the figure in number of characters. Defaults to the terminal window width, or falls back to 80.
         height: Height of the figure in number of characters. Defaults to the terminal window height, or falls back to 24.
-        legendloc: Legend location. Accepted values are "topleft", "topright", "bottomleft", and "bottomright".
-        xticklabel_length: Length of the tick labels on the x axis. Determines how many x ticks are shown.
-        ascii: Set to True to only use ascii characters. Defaults to trying to detect if unicode is supported in the terminal.
+        legendloc: Legend location. Supported values are `"topleft"`, `"topright"`, `"bottomleft"`, and `"bottomright"`.
+        xticklabel_length: Number of characters per tick label on the x axis. Determines how many x ticks are shown.
+        ascii: Set to `True` to only use ascii characters. Defaults to trying to detect if unicode is supported in the terminal.
+        y_axis_direction: Set to `"up"` to have Y axis point up (conventional for graphs), `"down"` to have Y axis point down 
+                          (conventional for images). By default, this is automatically determined based on the drawn plots.
     """
 
-    def __init__(self,
-                 xlabel: Optional[str] = None,
-                 ylabel: Optional[str] = None,
-                 title: Optional[str] = None,
-                 width: Optional[int] = None,
-                 height: Optional[int] = None,
-                 legendloc: str = "topright",
-                 xticklabel_length: int = 7,
-                 ascii: bool = False):
+    def __init__(
+        self,
+        xlabel: Optional[str] = None,
+        ylabel: Optional[str] = None,
+        title: Optional[str] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        legendloc: str = "topright",
+        xticklabel_length: int = 7,
+        ascii: bool = False,
+        y_axis_direction: str = "auto",
+    ):
+        if legendloc not in {"topleft", "topright", "bottomleft", "bottomright"}:
+            raise ValueError("Unsupported legend location")
+        assert isinstance(xticklabel_length, int) and xticklabel_length > 0
+        if width is not None:
+            assert isinstance(width, int) and width > 0
+        if height is not None:
+            assert isinstance(height, int) and height > 0
+
         self._xlabel = xlabel
         self._ylabel = ylabel
         self.title = title
         self.legendloc = legendloc
         self._xticklabel_length = xticklabel_length
-        assert isinstance(self._xticklabel_length, int)
-        assert self._xticklabel_length > 0
 
-        self._y_origin = "lower"
+        self._y_axis_direction = y_axis_direction
 
         self.ascii_only = ascii
         if not self.ascii_only:
@@ -69,8 +81,6 @@ class Figure:
         term_height -= 1  # room for prompt
         self.width = width if width else term_width
         self.height = height if height else term_height
-        assert isinstance(self.width, int) and self.width > 0
-        assert isinstance(self.height, int) and self.height > 0
 
         # gather stuff to plot before actually drawing it
         self._plots = []
@@ -92,7 +102,7 @@ class Figure:
             scale = CategoricalScale()
         target_min = -self._xax_height() - 1
         target_max = -self.height + 1 + bool(self.title)
-        if self._y_origin == "upper":
+        if self._y_axis_direction == "down":
             target_min, target_max = target_max, target_min
         scale.fit(self._y, target_min, target_max)
         if utils._is_numerical(self._y):
@@ -153,35 +163,43 @@ class Figure:
             y_axis_height = self.height - bool(self.title) - self._xax_height()
             if len(values) > y_axis_height:
                 raise ValueError(
-                    f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph taller.")
+                    f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph taller."
+                )
             return values
 
     @lru_cache(maxsize=1)
     def _xtick_values(self):
         if utils._is_numerical(self._x):
-            return utils._best_ticks(min(self._x), max(self._x), most=self.width // self._xticklabel_length)
+            return utils._best_ticks(
+                min(self._x), max(self._x), most=self.width // self._xticklabel_length
+            )
         else:  # categorical
             # note this may not fit depending on the width of the figure
             values = sorted([str(v) for v in set(self._x)])
             x_axis_width = self.width - self._yax_width()
-            if len(values)*self._xticklabel_length > x_axis_width:
+            if len(values) * self._xticklabel_length > x_axis_width:
                 raise ValueError(
-                    f"Too many ({len(values)}) unique x values to fit into x axis. Try making the graph wider or reducing `xtickvalue_length`.")
+                    f"Too many ({len(values)}) unique x values to fit into x axis. Try making the graph wider or reducing `xtickvalue_length`."
+                )
             return values
 
     def _draw_y_axis(self):
         start = round(self._yscale().transform(self._ytick_values()[-1]))
         end = round(self._yscale().transform(self._ytick_values()[0]))
         start, end = min(start, end), max(start, end)
-        self._canvas[start:end, self._yax_width()-1] = "│"
-        for value, pos in zip(self._ytick_values(), self._yscale().transform(self._ytick_values())):
+        self._canvas[start:end, self._yax_width() - 1] = "│"
+        for value, pos in zip(
+            self._ytick_values(), self._yscale().transform(self._ytick_values())
+        ):
             pos = round(pos)
             label = self._fmt(value)
-            self._canvas[pos, self._yax_width()-1] = "┤"
-            self._rjust_draw(label, self._canvas[pos, bool(self._ylabel)*2:self._yax_width()-1])
+            self._canvas[pos, self._yax_width() - 1] = "┤"
+            self._rjust_draw(
+                label, self._canvas[pos, bool(self._ylabel) * 2 : self._yax_width() - 1]
+            )
 
         if self._ylabel:
-            ylabel = self._ylabel[:end-start]  # make sure it fits
+            ylabel = self._ylabel[: end - start]  # make sure it fits
             self._center_draw(ylabel, self._canvas[start:end, 0])
 
     def _draw_x_axis(self):
@@ -190,20 +208,30 @@ class Figure:
         self._canvas[-self._xax_height(), start:end] = "─"
         before = self._xticklabel_length // 2
         after = self._xticklabel_length - before
-        for value, pos in zip(self._xtick_values(), self._xscale().transform(self._xtick_values())):
+        for value, pos in zip(
+            self._xtick_values(), self._xscale().transform(self._xtick_values())
+        ):
             pos = round(pos)
             label = self._fmt(value)
             self._canvas[-self._xax_height(), pos] = "┬"
             if pos == start:  # left-adjust first ticklabel
-                self._ljust_draw(label[:after], self._canvas[-self._xax_height()+1, pos:pos+after])
+                self._ljust_draw(
+                    label[:after],
+                    self._canvas[-self._xax_height() + 1, pos : pos + after],
+                )
             elif pos == end:  # right-adjust last ticklabel
-                self._rjust_draw(label[:before+1], self._canvas[-self._xax_height()+1, pos-before:pos+1])
+                self._rjust_draw(
+                    label[: before + 1],
+                    self._canvas[-self._xax_height() + 1, pos - before : pos + 1],
+                )
             else:  # center other ticklabels
-                self._center_draw(label[:self._xticklabel_length],
-                                  self._canvas[-self._xax_height()+1, pos-before:pos+after])
+                self._center_draw(
+                    label[: self._xticklabel_length],
+                    self._canvas[-self._xax_height() + 1, pos - before : pos + after],
+                )
 
         if self._xlabel:
-            xlabel = self._xlabel[:end-start]  # make sure it fits
+            xlabel = self._xlabel[: end - start]  # make sure it fits
             self._center_draw(xlabel, self._canvas[-1, start:end])
 
     def _draw_legend(self):
@@ -221,18 +249,36 @@ class Figure:
         elif self.legendloc.endswith("left"):
             left = int(self._xscale().transform(self._xtick_values()[0]))
 
-        self._canvas[top, left:left+width] = list("┌" + "Legend".center(width-2, "─") + "┐")
+        self._canvas[top, left : left + width] = list(
+            "┌" + "Legend".center(width - 2, "─") + "┐"
+        )
         for i, (marker, label) in enumerate(self._labels):
-            self._canvas[top+i+1, left:left+width] = list("│" + "  " + label.ljust(width-4) + "│")
+            self._canvas[top + i + 1, left : left + width] = list(
+                "│" + "  " + label.ljust(width - 4) + "│"
+            )
             # the marker must be inserted separately in case of ANSI escape characters messing with the string length
-            self._canvas[top+i+1, left+1] = marker
-        self._canvas[top+len(self._labels)+1, left:left+width] = list("└" + "─"*(width-2) + "┘")
+            self._canvas[top + i + 1, left + 1] = marker
+        self._canvas[top + len(self._labels) + 1, left : left + width] = list(
+            "└" + "─" * (width - 2) + "┘"
+        )
 
     def _prep(self, x, y, marker, color, label):
         """ Data preparation stuff common to all plots. """
-        if y is None:  # only y value provided
+        x_is_valid = x is not None and len(x) > 0
+        y_is_valid = y is not None and len(y) > 0
+        if not x_is_valid and not y_is_valid:
+            raise ValueError("`x` and/or `y` must be provided and not be empty")
+
+        if not x_is_valid and y_is_valid:
+            # only `y` is provided
+            x = range(len(y))
+        if x_is_valid and y is None:
+            # only `x` is provided, assume `x` is `y`
             x, y = range(len(x)), x
-        assert(len(x) == len(y))
+
+        if not len(x) == len(y):
+            raise ValueError("`x` and `y` must have the same length")
+
         if marker == "braille":
             marker = "⠄" if not self.ascii_only else "."
         else:
@@ -244,15 +290,22 @@ class Figure:
         self._clear_scale_cache()
         return x, y, marker, color, label
 
-    def scatter(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "•", color: Optional[str] = None, label: Optional[str] = None):
+    def scatter(
+        self,
+        x: Optional[Iterable] = None,
+        y: Optional[Iterable] = None,
+        marker: str = "•",
+        color: Optional[str] = None,
+        label: Optional[str] = None,
+    ):
         """
-        Add scatter plot.
+        Adds scatter plot.
 
         Args:
-            x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
+            x: x data. If `y` is not provided, `x` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw points. Set to "braille" to use braille characters.
-            color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
+            marker: Marker used to draw points. Set to `"braille"` to use braille characters.
+            color: Color of marker. Supported values are `"grey"`, `"red"`, `"green"`, `"yellow"`, `"blue"`, `"magenta"`, `"cyan"`, and `"white"`.
             label: Label to use for legend.
         """
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
@@ -268,17 +321,25 @@ class Figure:
                     self._canvas[yi, xi] = marker
                 else:
                     self._canvas[round(yi), round(xi)] = marker
+
         self._plots.append(partial(draw_scatter, x=x, y=y, marker=marker))
 
-    def line(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "braille", color: Optional[str] = None, label: Optional[str] = None):
+    def line(
+        self,
+        x: Optional[Iterable] = None,
+        y: Optional[Iterable] = None,
+        marker: str = "braille",
+        color: Optional[str] = None,
+        label: Optional[str] = None,
+    ):
         """
-        Add line plot.
+        Adds line plot.
 
         Args:
-            x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
+            x: x data. If `y` is not provided, `x` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw lines. Set to "braille" to use braille characters.
-            color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
+            marker: Marker used to draw lines. Set to `"braille"` to use braille characters.
+            color: Color of marker. Supported values are `"grey"`, `"red"`, `"green"`, `"yellow"`, `"blue"`, `"magenta"`, `"cyan"`, and `"white"`.
             label: Label to use for legend.
         """
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
@@ -286,11 +347,13 @@ class Figure:
         def draw_line(x, y, marker):
             xs = self._xscale().transform(x)
             ys = self._yscale().transform(y)
-            for (x0, x1), (y0, y1) in zip(zip(xs[: -1], xs[1:]), zip(ys[: -1], ys[1:])):
+            for (x0, x1), (y0, y1) in zip(zip(xs[:-1], xs[1:]), zip(ys[:-1], ys[1:])):
                 if not self.ascii_only and any((is_braille(char) for char in marker)):
-                    for x, y in utils._plot_line_segment(round(x0*2), round(y0*4), round(x1*2), round(y1*4)):
-                        x = x/2
-                        y = y/4
+                    for x, y in utils._plot_line_segment(
+                        round(x0 * 2), round(y0 * 4), round(x1 * 2), round(y1 * 4)
+                    ):
+                        x = x / 2
+                        y = y / 4
                         x_canvas = utils._round_half_away_from_zero(x)
                         y_canvas = utils._round_half_away_from_zero(y)
                         marker = draw_braille(x, y, self._canvas[y_canvas, x_canvas])
@@ -298,19 +361,29 @@ class Figure:
                             marker = colored(marker, color)
                         self._canvas[y_canvas, x_canvas] = marker
                 else:
-                    for x, y in utils._plot_line_segment(round(x0), round(y0), round(x1), round(y1)):
+                    for x, y in utils._plot_line_segment(
+                        round(x0), round(y0), round(x1), round(y1)
+                    ):
                         self._canvas[y, x] = marker
+
         self._plots.append(partial(draw_line, x=x, y=y, marker=marker))
 
-    def bar(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "█", color: Optional[str] = None, label: Optional[str] = None):
+    def bar(
+        self,
+        x: Optional[Iterable] = None,
+        y: Optional[Iterable] = None,
+        marker: str = "█",
+        color: Optional[str] = None,
+        label: Optional[str] = None,
+    ):
         """
-        Add vertical bar plot.
+        Adds vertical bar plot.
 
         Args:
-            x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
+            x: x data. If `y` is not provided, `x` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw bars. Set to "braille" to use braille characters.
-            color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
+            marker: Marker used to draw bars. Set to `"braille"` to use braille characters.
+            color: Color of marker. Supported values are `"grey"`, `"red"`, `"green"`, `"yellow"`, `"blue"`, `"magenta"`, `"cyan"`, and `"white"`.
             label: Label to use for legend.
         """
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
@@ -323,18 +396,26 @@ class Figure:
                 origin = self._yscale().transform(self._ytick_values()[0])
             for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
                 start, end = sorted([origin, yi])
-                self._canvas[round(start):round(end)+1, round(xi)] = marker
+                self._canvas[round(start) : round(end) + 1, round(xi)] = marker
+
         self._plots.append(partial(draw_bar, x=x, y=y, marker=marker))
 
-    def hbar(self, x: Iterable, y: Optional[Iterable] = None, marker: str = "█", color: Optional[str] = None, label: Optional[str] = None):
+    def hbar(
+        self,
+        x: Optional[Iterable] = None,
+        y: Optional[Iterable] = None,
+        marker: str = "█",
+        color: Optional[str] = None,
+        label: Optional[str] = None,
+    ):
         """
-        Add horizontal bar plot.
+        Adds horizontal bar plot.
 
         Args:
-            x: x data. If ``y`` is not provided, ``x`` is assumed to be y data.
+            x: x data. If `y` is not provided, `x` is assumed to be y data.
             y: y data.
-            marker: Marker used to draw bars. Set to "braille" to use braille characters.
-            color: Color of marker. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
+            marker: Marker used to draw bars. Set to `"braille"` to use braille characters.
+            color: Color of marker. Supported values are `"grey"`, `"red"`, `"green"`, `"yellow"`, `"blue"`, `"magenta"`, `"cyan"`, and `"white"`.
             label: Label to use for legend.
         """
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
@@ -347,18 +428,19 @@ class Figure:
                 origin = self._xscale().transform(self._xtick_values()[0])
             for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
                 start, end = sorted([origin, xi])
-                self._canvas[round(yi), round(start):round(end)+1] = marker
+                self._canvas[round(yi), round(start) : round(end) + 1] = marker
+
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
 
     def text(self, x, y, text: str, color: Optional[str] = None):
         """
-        Add text.
+        Adds text.
 
         Args:
             x: x location (text is left-aligned).
             y: y location.
             text: Text to draw.
-            color: Color of text. Accepted values are "grey", "red", "green", "yellow", "blue", "magenta", "cyan", and "white".
+            color: Color of text. Supported values are `"grey"`, `"red"`, `"green"`, `"yellow"`, `"blue"`, `"magenta"`, `"cyan"`, and `"white"`.
         """
         if color and not self.ascii_only:
             text = colored(text, color)
@@ -367,24 +449,31 @@ class Figure:
             x0 = round(self._xscale().transform(x[0]))
             y0 = round(self._yscale().transform(y[0]))
             for i, char in enumerate(text):
-                if x0+i >= self.width:
+                if x0 + i >= self.width:
                     break
-                self._canvas[y0, x0+i] = char
+                self._canvas[y0, x0 + i] = char
 
         self._plots.append(partial(draw_text, x=[x], y=[y], text=text))
 
-    def image(self, image: np.ndarray, vmin: Optional[float] = None, vmax: Optional[float] = None, cmap: str = "block", origin: str = "upper"):
+    def image(
+        self,
+        image: np.ndarray,
+        vmin: Optional[float] = None,
+        vmax: Optional[float] = None,
+        cmap: str = "block",
+    ):
         """
-        Add image.
+        Adds image.
+
+        Note that this sets the Y axis direction to point down, unless `y_axis_direction` is set otherwise in Figure init.
 
         Args:
             image: 2D array.
             vmin: Minimum value covered by the colormap. Lower values are clipped. 
-                  If set to ``None``, uses 0 if the ``dtype`` of image is ``numpy.uint8`` (usual for pictures), ``min(image)`` otherwise.
+                  If set to `None`, uses 0 if the `dtype` of image is `numpy.uint8` (usual for pictures), `min(image)` otherwise.
             vmax: Maximum value covered by the colormap. Higher values are clipped.
-                  If set to ``None``, uses 255 if the ``dtype`` of image is ``numpy.uint8`` (usual for pictures), ``max(image)`` otherwise.
-            cmap: Colormap used to map image values to characters. Currently supported cmaps are "ascii" and "block".
-            origin: Where to place the origin. Either "upper" or "lower". The convention for images and matrices it to put the origin in the upper left corner.
+                  If set to `None`, uses 255 if the `dtype` of image is `numpy.uint8` (usual for pictures), `max(image)` otherwise.
+            cmap: Colormap used to map image values to characters. Currently supported cmaps are `"ascii"` and `"block"`.
         """
         cmap = "ascii" if self.ascii_only else cmap
         # guess correct value range
@@ -397,7 +486,9 @@ class Figure:
         else:
             vmin = image.flatten().min() if vmin is None else vmin
             vmax = image.flatten().max() if vmax is None else vmax
-        self._y_origin = origin
+
+        if self._y_axis_direction == "auto":
+            self._y_axis_direction = "down"
 
         def draw_image(x, y):
             xmin = round(self._xscale().transform(0))
@@ -405,12 +496,25 @@ class Figure:
             xmax = round(self._xscale().transform(image.shape[1]))
             ymax = round(self._yscale().transform(image.shape[0]))
             ymin, ymax = min(ymin, ymax), max(ymin, ymax)
-            drawn = img2ascii(image, width=xmax-xmin+1, height=ymax-ymin+1, vmin=vmin, vmax=vmax, cmap=cmap)
-            if origin == "lower":
+            drawn = img2ascii(
+                image,
+                width=xmax - xmin + 1,
+                height=ymax - ymin + 1,
+                vmin=vmin,
+                vmax=vmax,
+                cmap=cmap,
+            )
+            if self._y_axis_direction != "down":
                 drawn = np.flip(drawn, axis=0)
-            self._canvas[ymin:ymax+1, xmin:xmax+1] = drawn
+            self._canvas[ymin : ymax + 1, xmin : xmax + 1] = drawn
 
-        self._plots.append(partial(draw_image, x=tuple(range(image.shape[1])), y=tuple(range(image.shape[0]))))
+        self._plots.append(
+            partial(
+                draw_image,
+                x=tuple(range(image.shape[1])),
+                y=tuple(range(image.shape[0])),
+            )
+        )
         self._clear_scale_cache()
 
     def _draw(self):
@@ -422,7 +526,7 @@ class Figure:
         self._canvas[:] = " "
 
         if self.title:
-            title = self.title[:self.width]  # make sure it fits
+            title = self.title[: self.width]  # make sure it fits
             self._center_draw(title, self._canvas[0, :])
 
         self._draw_x_axis()
@@ -438,7 +542,7 @@ class Figure:
                 self._canvas = np.char.replace(self._canvas, old, new)
 
     def clear(self):
-        """ Clear previously added plots. """
+        """ Clears previously added plots. """
         self._plots = []
         self._labels = []
         self._clear_scale_cache()
@@ -455,5 +559,9 @@ class Figure:
         return "\n".join(["".join(row) for row in self._canvas.tolist()])
 
     def show(self):
-        """ Show figure. """
+        """
+        Prints the figure.
+
+        Note that to get the figure as a string (to write to a file, for example), you can simply convert it to str type: `str(fig)`
+        """
         print(str(self))

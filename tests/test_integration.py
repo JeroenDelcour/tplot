@@ -14,17 +14,17 @@ def ascii_only(s):
 datasets = []
 anscombe = [
     (4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14),
-    (4.26, 5.68, 7.24, 4.82, 6.95, 8.81, 8.04, 8.33, 10.84, 7.58, 9.96)
+    (4.26, 5.68, 7.24, 4.82, 6.95, 8.81, 8.04, 8.33, 10.84, 7.58, 9.96),
 ]
 datasets.append(anscombe)
 iris_sample = [
     (5.1, 4.9, 4.7, 7, 6.4, 6.9, 6.3, 5.8, 7.1),
-    (["I. setosa"]*3 + ["I. versicolor"]*3 + ["I. virginica"]*3)
+    (["I. setosa"] * 3 + ["I. versicolor"] * 3 + ["I. virginica"] * 3),
 ]
 datasets.append(iris_sample)
 cheese_or_chocolate = [
     ("cheese", "chocolate", "cheese", "chocolate", "chocolate"),
-    ("pasta", "ice cream", "rice", "waffles", "pancakes")
+    ("pasta", "ice cream", "rice", "waffles", "pancakes"),
 ]
 datasets.append(cheese_or_chocolate)
 
@@ -33,7 +33,6 @@ image = (image + image.T) / 2
 
 
 class TestIntegration(unittest.TestCase):
-
     def test_y_only(self):
         fig = tplot.Figure(width=80, height=24)
         fig.scatter(range(10))
@@ -73,11 +72,11 @@ class TestIntegration(unittest.TestCase):
         fig.show()
 
         fig.clear()
-        fig.image((image*128).astype(np.uint8))
+        fig.image((image * 128).astype(np.uint8))
         fig.show()
 
         fig.clear()
-        fig.image(image*-1e-3)
+        fig.image(image * -1e-3)
         fig.show()
 
         fig.clear()
@@ -110,14 +109,23 @@ class TestIntegration(unittest.TestCase):
             fig.show()
 
     def test_axis_labels(self):
-        fig = tplot.Figure(xlabel="x axis label goes here", ylabel="y axis label goes here", title="Title goes here",
-                           width=80, height=40, legendloc="bottomright", xticklabel_length=14)
+        fig = tplot.Figure(
+            xlabel="x axis label goes here",
+            ylabel="y axis label goes here",
+            title="Title goes here",
+            width=80,
+            height=40,
+            legendloc="bottomright",
+            xticklabel_length=14,
+        )
         fig.scatter(range(10), label="Legend label goes here")
         fig.show()
 
     def test_colors(self):
         fig = tplot.Figure(width=80, height=24, legendloc="bottomright")
-        for i, color in enumerate(["red", "green", "blue", "yellow", "magenta", "cyan", "grey", "white"]):
+        for i, color in enumerate(
+            ["red", "green", "blue", "yellow", "magenta", "cyan", "grey", "white"]
+        ):
             fig.scatter([i], [i], color=color, label=color)
         fig.show()
 
@@ -127,7 +135,7 @@ class TestIntegration(unittest.TestCase):
         fig.text(x=4, y=-1, text="testing colored text", color="red")
         fig.text(x=9, y=8, text="testing text at right boundary")
         fig.show()
-    
+
     def test_braille(self):
         fig = tplot.Figure(width=80, height=24)
         for data in datasets:
@@ -143,3 +151,13 @@ class TestIntegration(unittest.TestCase):
             fig.clear()
             fig.hbar(data[0], data[1], marker="braille")
             fig.show()
+
+    def test_y_axis_direction(self):
+        fig = tplot.Figure(width=80, height=24, y_axis_direction="down")
+        for data in datasets:
+            fig.clear()
+            fig.scatter(data[0], data[1])
+            fig.show()
+        fig = tplot.Figure(width=80, height=24, y_axis_direction="up")
+        fig.image(image)
+        fig.show()
