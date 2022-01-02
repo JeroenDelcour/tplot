@@ -167,9 +167,7 @@ class Figure:
     @lru_cache(maxsize=1)
     def _xtick_values(self):
         if utils._is_numerical(self._x):
-            return utils._best_ticks(
-                min(self._x), max(self._x), most=self.width // 4
-            )
+            return utils._best_ticks(min(self._x), max(self._x), most=self.width // 4)
         else:  # categorical
             # note this may not fit depending on the width of the figure
             values = sorted([str(v) for v in set(self._x)])
@@ -200,9 +198,9 @@ class Figure:
         ]
         labels = [self._fmt(v) for v in self._xtick_values()]
         # draw axis
-        start = round(self._xscale().transform(self._xtick_values()[0]))
-        end = round(self._xscale().transform(self._xtick_values()[-1]))
-        self._canvas[-self._xax_height(), start:end] = "─"
+        axis_start = round(self._xscale().transform(self._xtick_values()[0]))
+        axis_end = round(self._xscale().transform(self._xtick_values()[-1]))
+        self._canvas[-self._xax_height(), axis_start:axis_end] = "─"
         # draw ticks
         for tick_pos in tick_positions:
             self._canvas[-self._xax_height(), tick_pos] = "┬"
@@ -215,8 +213,8 @@ class Figure:
             self._canvas[-self._xax_height() + 1, start:end] = list(label)
         # draw axis label
         if self._xlabel:
-            xlabel = self._xlabel[: end - start]  # make sure it fits
-            self._center_draw(xlabel, self._canvas[-1, start:end])
+            xlabel = self._xlabel[: axis_end - axis_start]  # make sure it fits
+            self._center_draw(xlabel, self._canvas[-1, axis_start:axis_end])
 
     def _optimize_xticklabel_anchors(
         self,
@@ -260,37 +258,18 @@ class Figure:
                 forces[i + 1] += f
             # figure boundary forces
             forces[0] -= min(0, anchors[0][0])
-            forces[-1] -= max(0, anchors[-1][1] + 1 - self.width)
+            forces[-1] -= max(0, anchors[-1][1] - self.width)
             return forces
-
-        # def vis(anchors, labels):
-        #     ticks_out = [" "] * self.width
-        #     labels_out = [" "] * self.width
-
-        #     # draw labels
-        #     for anchor, label in zip(anchors, labels):
-        #         anchor_len = round(anchor[1] - anchor[0])
-        #         label = label[:anchor_len]
-        #         labels_out[round(anchor[0]) : round(anchor[0]) + len(label)] = label
-        #     # draw ticks
-        #     for tick_pos in tick_positions:
-        #         ticks_out[tick_pos] = "|"
-        #     print("".join(ticks_out))
-        #     print("".join(labels_out))
-
-        # vis(anchors, labels)
 
         prev_total_forces = float("inf")
         forces = calc_forces(anchors)
         total_forces = sum([abs(f) for f in forces])
+
+        if total_forces == 0:
+            return anchors  # early return
+
         iterations = 0
         while abs(total_forces - prev_total_forces) > tolerance:
-            # print("Anchors:")
-            # print(anchors)
-            # print(f"Forces (sum={sum([abs(f) for f in forces])}):")
-            # print(forces)
-            # print()
-            # apply forces
             for anchor, force, tick_pos in zip(anchors, forces, tick_positions):
                 anchor[0] += force * stepsize
                 anchor[1] += force * stepsize
@@ -303,8 +282,6 @@ class Figure:
                     d = tick_pos - round(anchor[1]) + 1
                     anchor[0] += d
                     anchor[1] += d
-
-            # vis(anchors, labels)
 
             # recalculate forces
             prev_total_forces = sum([abs(f) for f in forces])
