@@ -1,7 +1,7 @@
 from typing import Iterable
 
 
-def get_braille(s):
+def get_braille(s: str):
     """
     `s` specifies which dots in the desired braille character must be on ('1') and which must be off ('0').
     Dots in the 2x8 braille matrix are ordered top-down, left-to-right.
@@ -23,7 +23,7 @@ def get_braille(s):
     return chr(0x2800 + int(s[::-1], 2))
 
 
-def braille_bin(char):
+def braille_bin(char: str):
     """ Inverse of get_braille() """
     s = ord(char) - 0x2800
     s = format(s, "b").rjust(8, "0")
@@ -42,7 +42,7 @@ def braille_from_xy(x: int, y: int):
     Returns braille character with dot at x, y position filled in.
     Example: braille_from_xy(x=1, y=0) returns "⠈" (top right dot filled in)
     """
-    if not 0 <= x <= 2 or not 0 <= y <= 3:
+    if not 0 <= x <= 1 or not 0 <= y <= 3:
         raise ValueError("Invalid braille dot position.")
     s = ["0"]*8
     s[x*4+y] = "1"
