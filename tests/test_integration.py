@@ -116,7 +116,6 @@ class TestIntegration(unittest.TestCase):
             width=80,
             height=40,
             legendloc="bottomright",
-            xticklabel_length=14,
         )
         fig.scatter(range(10), label="Legend label goes here")
         fig.show()

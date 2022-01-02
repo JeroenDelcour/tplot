@@ -9,6 +9,7 @@ import numpy as np
 from functools import lru_cache, partial
 from termcolor import colored
 from colorama import init
+from copy import deepcopy
 
 init()
 
@@ -39,7 +40,6 @@ class Figure:
         width: Width of the figure in number of characters. Defaults to the terminal window width, or falls back to 80.
         height: Height of the figure in number of characters. Defaults to the terminal window height, or falls back to 24.
         legendloc: Legend location. Supported values are `"topleft"`, `"topright"`, `"bottomleft"`, and `"bottomright"`.
-        xticklabel_length: Number of characters per tick label on the x axis. Determines how many x ticks are shown.
         ascii: Set to `True` to only use ascii characters. Defaults to trying to detect if unicode is supported in the terminal.
         y_axis_direction: Set to `"up"` to have Y axis point up (conventional for graphs), `"down"` to have Y axis point down 
                           (conventional for images). By default, this is automatically determined based on the drawn plots.
@@ -53,13 +53,11 @@ class Figure:
         width: Optional[int] = None,
         height: Optional[int] = None,
         legendloc: str = "topright",
-        xticklabel_length: int = 7,
         ascii: bool = False,
         y_axis_direction: str = "auto",
     ):
         if legendloc not in {"topleft", "topright", "bottomleft", "bottomright"}:
             raise ValueError("Unsupported legend location")
-        assert isinstance(xticklabel_length, int) and xticklabel_length > 0
         if width is not None:
             assert isinstance(width, int) and width > 0
         if height is not None:
@@ -69,7 +67,6 @@ class Figure:
         self._ylabel = ylabel
         self.title = title
         self.legendloc = legendloc
-        self._xticklabel_length = xticklabel_length
 
         self._y_axis_direction = y_axis_direction
 
@@ -171,16 +168,11 @@ class Figure:
     def _xtick_values(self):
         if utils._is_numerical(self._x):
             return utils._best_ticks(
-                min(self._x), max(self._x), most=self.width // self._xticklabel_length
+                min(self._x), max(self._x), most=self.width // 4
             )
         else:  # categorical
             # note this may not fit depending on the width of the figure
             values = sorted([str(v) for v in set(self._x)])
-            x_axis_width = self.width - self._yax_width()
-            if len(values) * self._xticklabel_length > x_axis_width:
-                raise ValueError(
-                    f"Too many ({len(values)}) unique x values to fit into x axis. Try making the graph wider or reducing `xtickvalue_length`."
-                )
             return values
 
     def _draw_y_axis(self):
@@ -203,36 +195,145 @@ class Figure:
             self._center_draw(ylabel, self._canvas[start:end, 0])
 
     def _draw_x_axis(self):
+        tick_positions = [
+            round(v) for v in self._xscale().transform(self._xtick_values())
+        ]
+        labels = [self._fmt(v) for v in self._xtick_values()]
+        # draw axis
         start = round(self._xscale().transform(self._xtick_values()[0]))
         end = round(self._xscale().transform(self._xtick_values()[-1]))
         self._canvas[-self._xax_height(), start:end] = "─"
-        before = self._xticklabel_length // 2
-        after = self._xticklabel_length - before
-        for value, pos in zip(
-            self._xtick_values(), self._xscale().transform(self._xtick_values())
-        ):
-            pos = round(pos)
-            label = self._fmt(value)
-            self._canvas[-self._xax_height(), pos] = "┬"
-            if pos == start:  # left-adjust first ticklabel
-                self._ljust_draw(
-                    label[:after],
-                    self._canvas[-self._xax_height() + 1, pos : pos + after],
-                )
-            elif pos == end:  # right-adjust last ticklabel
-                self._rjust_draw(
-                    label[: before + 1],
-                    self._canvas[-self._xax_height() + 1, pos - before : pos + 1],
-                )
-            else:  # center other ticklabels
-                self._center_draw(
-                    label[: self._xticklabel_length],
-                    self._canvas[-self._xax_height() + 1, pos - before : pos + after],
-                )
-
+        # draw ticks
+        for tick_pos in tick_positions:
+            self._canvas[-self._xax_height(), tick_pos] = "┬"
+        # draw labels
+        anchors = self._optimize_xticklabel_anchors(
+            tick_positions=tick_positions, labels=labels,
+        )
+        for (start, end), label in zip(anchors, labels):
+            label = label[: end - start]  # shorten label if needed
+            self._canvas[-self._xax_height() + 1, start:end] = list(label)
+        # draw axis label
         if self._xlabel:
             xlabel = self._xlabel[: end - start]  # make sure it fits
             self._center_draw(xlabel, self._canvas[-1, start:end])
+
+    def _optimize_xticklabel_anchors(
+        self,
+        tick_positions: Iterable[int],
+        labels: Iterable[str],
+        margin: int = 2,
+        stepsize: float = 0.3,
+        tolerance: float = 0.3,
+        max_iterations: int = 1000,
+    ):
+        """
+        Models the placement of tick labels as a 1-dimensional case of a force-directed graph.
+        Spring forces between the labels are simulated iteratively until they stabilize.
+
+        Args:
+            tick_positions: Ordered positions of the ticks.
+            labels: Tick labels.
+            margin: Margin between labels.
+            stepsize: Spring force simulation step size.
+            tolerance: Tolerance for termination.
+            max_iterations: Maximum number of iterations.
+        Returns:
+            List of [start, end] positions of labels.
+        """
+        anchors = []
+        for tick_pos, label in zip(tick_positions, labels):
+            left = tick_pos - len(label) // 2
+            right = left + len(label)
+            d = right - self.width
+            if d > 0:
+                left -= d
+                right -= d
+            anchors.append([left, right])
+
+        def calc_forces(anchors):
+            forces = [0] * len(anchors)
+            # forces between labels
+            for i in range(len(anchors) - 1):
+                f = max(0, anchors[i][1] + margin - anchors[i + 1][0])
+                forces[i] -= f
+                forces[i + 1] += f
+            # figure boundary forces
+            forces[0] -= min(0, anchors[0][0])
+            forces[-1] -= max(0, anchors[-1][1] + 1 - self.width)
+            return forces
+
+        # def vis(anchors, labels):
+        #     ticks_out = [" "] * self.width
+        #     labels_out = [" "] * self.width
+
+        #     # draw labels
+        #     for anchor, label in zip(anchors, labels):
+        #         anchor_len = round(anchor[1] - anchor[0])
+        #         label = label[:anchor_len]
+        #         labels_out[round(anchor[0]) : round(anchor[0]) + len(label)] = label
+        #     # draw ticks
+        #     for tick_pos in tick_positions:
+        #         ticks_out[tick_pos] = "|"
+        #     print("".join(ticks_out))
+        #     print("".join(labels_out))
+
+        # vis(anchors, labels)
+
+        prev_total_forces = float("inf")
+        forces = calc_forces(anchors)
+        total_forces = sum([abs(f) for f in forces])
+        iterations = 0
+        while abs(total_forces - prev_total_forces) > tolerance:
+            # print("Anchors:")
+            # print(anchors)
+            # print(f"Forces (sum={sum([abs(f) for f in forces])}):")
+            # print(forces)
+            # print()
+            # apply forces
+            for anchor, force, tick_pos in zip(anchors, forces, tick_positions):
+                anchor[0] += force * stepsize
+                anchor[1] += force * stepsize
+                # don't move beyond tick position
+                if round(anchor[0]) > tick_pos:
+                    d = round(anchor[0]) - tick_pos
+                    anchor[0] -= d
+                    anchor[1] -= d
+                elif round(anchor[1]) - 1 < tick_pos:
+                    d = tick_pos - round(anchor[1]) + 1
+                    anchor[0] += d
+                    anchor[1] += d
+
+            # vis(anchors, labels)
+
+            # recalculate forces
+            prev_total_forces = sum([abs(f) for f in forces])
+            forces = calc_forces(anchors)
+            total_forces = sum([abs(f) for f in forces])
+
+            iterations += 1
+            if iterations >= max_iterations:
+                warn(
+                    f"Max iterations (={max_iterations}) during X axis label placement reached."
+                )
+                break
+
+        # round anchors
+        anchors = [
+            [round(anchor[0]), round(anchor[0]) + len(label)]
+            for anchor, label in zip(anchors, labels)
+        ]
+        # limit to figure boundaries
+        for anchor in anchors:
+            anchor[0] = max(0, anchor[0])
+            anchor[1] = min(self.width, anchor[1])
+        # don't overwrite other labels
+        for i in range(len(anchors)):
+            if i > 0:
+                anchors[i][0] = max(tick_positions[i - 1] + 1, anchors[i][0])
+            if i < len(anchors) - 1:
+                anchors[i][1] = min(tick_positions[i + 1], anchors[i][1])
+        return anchors
 
     def _draw_legend(self):
         # labelstrings = [f"{marker} {label}" for marker, label in self._labels]

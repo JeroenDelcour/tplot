@@ -101,8 +101,7 @@ fig.show()
 chocolate┤X           X                                    X
    cheese┤                        X            X            
           ┬───────────┬───────────┬────────────┬───────────┬
-          ice cream  pancakes  pasta         rice    waffles
-
+      ice cream   pancakes      pasta        rice    waffles
 ```
 
 ## Markers
