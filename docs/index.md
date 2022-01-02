@@ -32,32 +32,7 @@ fig.scatter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 fig.show()
 ```
 
-```text
-10┤                                                                            •
-  │                                                                             
-  │                                                                    •        
-  │                                                                             
- 8┤                                                             •               
-  │                                                                             
-  │                                                     •                       
-  │                                                                             
- 6┤                                              •                              
-  │                                                                             
-  │                                      •                                      
-  │                                                                             
- 4┤                              •                                              
-  │                                                                             
-  │                       •                                                     
-  │                                                                             
- 2┤               •                                                             
-  │                                                                             
-  │        •                                                                    
-  │                                                                             
- 0┤•                                                                            
-   ┬───────┬──────┬───────┬──────┬───────┬───────┬──────┬───────┬──────┬───────┬
-   0       1      2       3      4       5       6      7       8      9      10
-
-```
+![Basic example](images/basic.png)
 
 ### A more advanced example
 
@@ -80,29 +55,40 @@ fig.line(x, y=np.cos(x), color="blue", label="cos(x)")
 fig.show()
 ```
 
-![Advanced example](images/advanced_example.png)
+![Advanced example](images/advanced.png)
 
 ### Categorical data
+
+`tplot` supports categorical data in the form of strings:
 
 ```python
 import tplot
 
-dish = ["pasta", "ice cream", "rice", "waffles", "pancakes"]
-topping = ["cheese", "chocolate", "cheese", "chocolate", "chocolate"]
+dish = ["Pasta", "Ice cream", "Rice", "Waffles", "Pancakes"]
+topping = ["Cheese", "Chocolate", "Cheese", "Chocolate", "Chocolate"]
 
-fig = tplot.Figure(width=60, height=6, title="Chocolate or cheese?", xticklabel_length=14)
+fig = tplot.Figure(height=7, title="Chocolate or cheese?")
 fig.scatter(x=dish, y=topping, marker="X")
 fig.show()
 ```
+![Categorical data example](images/categorical.png)
 
-```text
-                    Chocolate or cheese?                    
-                                                            
-chocolate┤X           X                                    X
-   cheese┤                        X            X            
-          ┬───────────┬───────────┬────────────┬───────────┬
-      ice cream   pancakes      pasta        rice    waffles
+All plots support any combination of numerical and/or categorical data:
+
+```python
+from collections import Counter
+import tplot
+
+counter = Counter(
+    ["Spam", "sausage", "Spam", "Spam", "Spam", "bacon", "Spam", "tomato", "Spam"]
+)
+
+fig = tplot.Figure(ylabel="Count")
+fig.bar(x=counter.keys(), y=counter.values())
+fig.show()
 ```
+
+![Spam, sausage, Spam, Spam, Spam, bacon, Spam, tomato and Spam](images/spamspamspamspam.png)
 
 ## Markers
 
@@ -111,36 +97,13 @@ chocolate┤X           X                                    X
 ```python
 import tplot
 
-fig = tplot.Figure()
-fig.line([0,2,3,3.5,2,6.1,1.5,3], marker="♥")
+fig = tplot.Figure(title="Twinkle twinkle little ★")
+notes = ["C", "C", "G", "G", "a", "a", "G", "F", "F", "E", "E", "D", "D", "C"]
+fig.scatter(notes, marker="♩")
 fig.show()
 ```
 
-```text
-7┤                                                                              
- │                                                                              
- │                                                                              
-6┤                                                       ♥                      
- │                                                      ♥ ♥                     
- │                                                     ♥   ♥                    
-5┤                                                    ♥     ♥                   
- │                                                   ♥      ♥                   
- │                                                  ♥        ♥                  
-4┤                                                 ♥          ♥                 
- │                            ♥♥♥♥♥♥♥             ♥            ♥                
-3┤                     ♥♥♥♥♥♥♥       ♥♥♥         ♥              ♥             ♥♥
- │                 ♥♥♥♥                 ♥♥      ♥                ♥          ♥♥  
- │             ♥♥♥♥                       ♥♥♥  ♥                 ♥        ♥♥    
-2┤           ♥♥                              ♥♥                   ♥     ♥♥      
- │         ♥♥                                                      ♥  ♥♥        
- │       ♥♥                                                         ♥♥          
-1┤     ♥♥                                                                       
- │   ♥♥                                                                         
- │ ♥♥                                                                           
-0┤♥                                                                             
-  ┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬
-  0          1          2          3          4          5          6          7
-```
+![Twinkle twinkle little star](images/twinkle_twinkle_little_star.png)
 
 Be wary of using [fullwidth characters](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms), because these will [mess up alignment](#character-alignment).
 
@@ -186,9 +149,11 @@ However, if you're using unicode characters (such as braille), you will probably
 
 `tplot` assumes all characters have a fixed width. Unless you're crazy, your terminal uses a monospace font. But even for monospaced fonts, the wondrous world of unicode has two character widths: halfwidth (so called because they are half as wide as they are tall) and fullwidth. Most characters you know are probably halfwidth. Many Asian languages such as Chinese, Korean, and Japanese use fullwidth characters. Emoji are usually also fullwidth.
 
-Though fullwidth characters are exactly twice as wide as halfwidth characters, they still count as only one character. `tplot` will not stop you from using fullwidth characters, but it will mess up the alignment:
+Though fullwidth characters are exactly twice as wide as halfwidth characters, they still count as only one character. `tplot` will not stop you from using fullwidth characters, but it will mess up the alignment, potentially even causing lines to wrap around:
 
 ```
+import tplot
+
 fig = tplot.Figure(width=80, height=6)
 x = [0, 1, 2, 3, 4, 5]
 fig.scatter(x, y=[1, 1, 1, 1, 1, 1], marker="#")
@@ -196,36 +161,35 @@ fig.scatter(x, y=[0, 0, 0, 0, 0, 0], marker="💩")
 fig.show()
 ```
 
-```text
-1┤#              #               #              #               #              #
- │                                                                              
-0┤💩              💩               💩              💩               💩              💩
-  ┬───────┬──────┬───────┬───────┬──────┬───────┬───────┬───────┬──────┬───────┬
-  0      0.5     1      1.5      2     2.5      3      3.5      4     4.5      5
-```
+![Example of misalignment due to fullwidth characters](images/misalignment.png)
 
 #### Braille
 
-`tplot` can use braille characters to subdivide characters into a 2x8 grid, increasing the resolution of the plot beyond what is possible with single characters. However, not all monospace fonts display braille characters the same. In Ubuntu's default terminal with the default Monospace Regular font, braille characters are rendered as halfwidth characters, so this will show a nice diagonal line:
+`tplot` can use braille characters to subdivide each character into a 2x8 grid, increasing the resolution of the plot beyond what is possible with single characters. However, not all monospace fonts display braille characters the same. In Ubuntu's default terminal with the default Monospace Regular font, braille characters are rendered as halfwidth characters, so this will show a nice diagonal line:
 
 ```python
-fig = tplot.Figure(width=40, height=12)
+import tplot
+
+fig = tplot.Figure()
 fig.line([0,1], marker="braille")
 fig.show()
 ```
 
+![Correctly rendered braille](images/braille.png)
+
 But many environments treat braille as somewhere in between halfwidth and fullwidth characters, leading to close-but-not-quite aligned plots:
 
 ```text
-  1┤                                 ⣀⠤⠒
-   │                            ⢀⡠⠤⠒⠉   
-   │                        ⢀⡠⠔⠊⠁       
-   │                    ⣀⠤⠒⠉⠁           
-0.5┤               ⢀⡠⠔⠒⠉                
-   │           ⣀⠤⠔⠊⠁                    
-   │       ⣀⠤⠒⠉                         
-   │  ⢀⡠⠔⠊⠉                             
-  0┤⠐⠊⠁                                 
-    ┬─────────────────┬────────────────┬
-    0                0.5               1
+                                                                                
+  1┤                                                                      ⣀⣀⠤⠤⠔⠒
+   │                                                            ⢀⣀⣀⠤⠤⠒⠒⠊⠉⠉      
+   │                                                   ⣀⣀⡠⠤⠤⠒⠒⠉⠉⠁               
+   │                                          ⣀⣀⠤⠤⠔⠒⠒⠉⠉                         
+0.5┤                                ⢀⣀⡠⠤⠤⠒⠒⠊⠉⠉                                  
+   │                       ⣀⣀⡠⠤⠔⠒⠒⠉⠉⠁                                           
+   │             ⢀⣀⣀⠤⠤⠔⠒⠊⠉⠉                                                     
+   │    ⢀⣀⡠⠤⠤⠒⠒⠊⠉⠁                                                              
+  0┤⠐⠒⠉⠉⠁                                                                       
+    ┬───────┬──────┬───────┬──────┬───────┬──────┬───────┬──────┬───────┬──────┬
+    0      0.1    0.2     0.3    0.4     0.5    0.6     0.7    0.8     0.9     1
 ```
