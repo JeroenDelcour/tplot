@@ -22,7 +22,7 @@ datasets = {
         (5.1, 4.9, 4.7, 7, 6.4, 6.9, 6.3, 5.8, 7.1),
         (["I. setosa"] * 3 + ["I. versicolor"] * 3 + ["I. virginica"] * 3),
     ],
-    "choose_or_chocolate": [
+    "cheese_or_chocolate": [
         ("cheese", "chocolate", "cheese", "chocolate", "chocolate"),
         ("pasta", "ice cream", "rice", "waffles", "pancakes"),
     ],
