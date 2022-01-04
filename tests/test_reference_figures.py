@@ -1,8 +1,20 @@
 import tplot
 import numpy as np
 from pathlib import Path
+from PIL import Image
 
 generate = False
+
+
+def equal_to_file(output, filename):
+    with open(
+        Path("tests") / "reference_figures" / filename, "w" if generate else "r"
+    ) as f:
+        if generate:
+            f.write(output)
+            return True
+        else:
+            return output == f.read()
 
 
 def ascii_only(s):
@@ -28,10 +40,10 @@ datasets = {
     ],
 }
 
-image = np.linspace(np.zeros(24), np.ones(24), num=24)
-image = (image + image.T) / 2
+gradient = np.linspace(np.zeros(24), np.ones(24), num=24)
+gradient = (gradient + gradient.T) / 2
 
-refence_figures_dir = Path("tests/reference_figures")
+reference_figures_dir = Path("tests/reference_figures")
 
 
 def test_ascii_fallback():
@@ -42,14 +54,14 @@ def test_ascii_fallback():
         assert ascii_only(str(fig))
 
     fig.clear()
-    fig.image(image)
+    fig.image(gradient)
     assert ascii_only(str(fig))
 
 
 def test_y_only():
     fig = tplot.Figure(width=80, height=24)
     fig.scatter(range(10))
-    with open(refence_figures_dir / "y_only.txt", "w" if generate else "r") as f:
+    with open(reference_figures_dir / "y_only.txt", "w" if generate else "r") as f:
         if generate:
             f.write(str(fig))
         else:
@@ -61,14 +73,7 @@ def test_scatter():
     for dataset_name, data in datasets.items():
         fig.clear()
         fig.scatter(data[0], data[1])
-        with open(
-            refence_figures_dir / f"scatter_{dataset_name}.txt",
-            "w" if generate else "r",
-        ) as f:
-            if generate:
-                f.write(str(fig))
-            else:
-                assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"scatter_{dataset_name}.txt")
 
 
 def test_line():
@@ -76,13 +81,7 @@ def test_line():
     for dataset_name, data in datasets.items():
         fig.clear()
         fig.line(data[0], data[1])
-    with open(
-        refence_figures_dir / f"line_{dataset_name}.txt", "w" if generate else "r"
-    ) as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"line_{dataset_name}.txt")
 
 
 def test_bar():
@@ -90,13 +89,7 @@ def test_bar():
     for dataset_name, data in datasets.items():
         fig.clear()
         fig.bar(data[0], data[1])
-    with open(
-        refence_figures_dir / f"bar_{dataset_name}.txt", "w" if generate else "r"
-    ) as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"bar_{dataset_name}.txt")
 
 
 def test_hbar():
@@ -104,61 +97,34 @@ def test_hbar():
     for dataset_name, data in datasets.items():
         fig.clear()
         fig.hbar(data[0], data[1])
-    with open(
-        refence_figures_dir / f"hbar_{dataset_name}.txt", "w" if generate else "r"
-    ) as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"hbar_{dataset_name}.txt")
 
 
 def test_image():
     fig = tplot.Figure(width=80, height=24)
-    fig.image(image)
-    with open(refence_figures_dir / "image.txt", "w" if generate else "r") as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    fig.image(gradient)
+    assert equal_to_file(str(fig), f"image.txt")
 
     fig.clear()
-    fig.image((image * 128).astype(np.uint8))
-    with open(
-        refence_figures_dir / "image_big_values.txt", "w" if generate else "r"
-    ) as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    fig.image((gradient * 128).astype(np.uint8))
+    assert equal_to_file(str(fig), f"image_big_values.txt")
 
     fig.clear()
-    fig.image(image * -1e-3)
-    with open(
-        refence_figures_dir / "image_small_values.txt", "w" if generate else "r"
-    ) as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    fig.image(gradient * -1e-3)
+    assert equal_to_file(str(fig), f"image_small_values.txt")
 
     fig.clear()
-    fig.image(image, vmin=-1, vmax=1)
-    with open(
-        refence_figures_dir / "image_vmin_vmax.txt", "w" if generate else "r"
-    ) as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    fig.image(gradient, vmin=-1, vmax=1)
+    assert equal_to_file(str(fig), f"image_vmin_vmax.txt")
 
     fig.clear()
-    fig.image(image, cmap="ascii")
-    with open(refence_figures_dir / "image_ascii.txt", "w" if generate else "r") as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    fig.image(gradient, cmap="ascii")
+    assert equal_to_file(str(fig), f"image_ascii.txt")
+
+    fig.clear()
+    cameraman = np.array(Image.open("tests/cameraman.png"))
+    fig.image(cameraman)
+    assert equal_to_file(str(fig), f"image_cameraman.txt")
 
 
 def test_legend():
@@ -167,13 +133,7 @@ def test_legend():
         fig.scatter(range(5), label="First")
         fig.line(range(-5, 0), label="Second")
         fig.scatter(range(5, 10), marker="3", label="Third")
-        with open(
-            refence_figures_dir / f"legendloc_{legendloc}.txt", "w" if generate else "r"
-        ) as f:
-            if generate:
-                f.write(str(fig))
-            else:
-                assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"legendloc_{legendloc}.txt")
 
 
 def test_axis_labels():
@@ -186,11 +146,7 @@ def test_axis_labels():
         legendloc="bottomright",
     )
     fig.scatter(range(10), label="Legend label goes here")
-    with open(refence_figures_dir / "axis_labels.txt", "w" if generate else "r") as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    assert equal_to_file(str(fig), f"axis_labels.txt")
 
 
 def test_colors():
@@ -199,11 +155,7 @@ def test_colors():
         ["red", "green", "blue", "yellow", "magenta", "cyan", "grey", "white"]
     ):
         fig.scatter([i], [i], color=color, label=color)
-    with open(refence_figures_dir / "colors.txt", "w" if generate else "r") as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    assert equal_to_file(str(fig), f"colors.txt")
 
 
 def test_text():
@@ -211,11 +163,7 @@ def test_text():
     fig.text(x=4, y=0, text="testing text")
     fig.text(x=4, y=-1, text="testing colored text", color="red")
     fig.text(x=9, y=8, text="testing text at right boundary")
-    with open(refence_figures_dir / "text.txt", "w" if generate else "r") as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    assert equal_to_file(str(fig), f"text.txt")
 
 
 def test_braille():
@@ -223,44 +171,19 @@ def test_braille():
     for dataset_name, data in datasets.items():
         fig.clear()
         fig.scatter(data[0], data[1], marker="braille", color="red")
-        with open(
-            refence_figures_dir / f"braille_scatter_{dataset_name}.txt",
-            "w" if generate else "r",
-        ) as f:
-            if generate:
-                f.write(str(fig))
-            else:
-                assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"braille_scatter_{dataset_name}.txt")
+
         fig.clear()
         fig.line(data[0], data[1], marker="braille", color="green")
-        with open(
-            refence_figures_dir / f"braille_line_{dataset_name}.txt",
-            "w" if generate else "r",
-        ) as f:
-            if generate:
-                f.write(str(fig))
-            else:
-                assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"braille_line_{dataset_name}.txt")
+
         fig.clear()
         fig.bar(data[0], data[1], marker="braille", color="blue")
-        with open(
-            refence_figures_dir / f"braille_bar_{dataset_name}.txt",
-            "w" if generate else "r",
-        ) as f:
-            if generate:
-                f.write(str(fig))
-            else:
-                assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"braille_bar_{dataset_name}.txt")
+
         fig.clear()
         fig.hbar(data[0], data[1], marker="braille")
-        with open(
-            refence_figures_dir / f"braille_hbar_{dataset_name}.txt",
-            "w" if generate else "r",
-        ) as f:
-            if generate:
-                f.write(str(fig))
-            else:
-                assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"braille_hbar_{dataset_name}.txt")
 
 
 def test_y_axis_direction():
@@ -268,18 +191,8 @@ def test_y_axis_direction():
     for dataset_name, data in datasets.items():
         fig.clear()
         fig.scatter(data[0], data[1])
-        with open(
-            refence_figures_dir / f"y_axis_down_{dataset_name}.txt",
-            "w" if generate else "r",
-        ) as f:
-            if generate:
-                f.write(str(fig))
-            else:
-                assert str(fig) == f.read()
+        assert equal_to_file(str(fig), f"y_axis_down_{dataset_name}.txt")
+
     fig = tplot.Figure(width=80, height=24, y_axis_direction="up")
-    fig.image(image)
-    with open(refence_figures_dir / "y_axis_up.txt", "w" if generate else "r") as f:
-        if generate:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    fig.image(gradient)
+    assert equal_to_file(str(fig), f"y_axis_up.txt")

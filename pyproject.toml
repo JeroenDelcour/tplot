@@ -20,6 +20,7 @@ mkdocs = "^1.2.3"
 mkdocstrings = "^0.17.0"
 pytest = "^6.2.5"
 coverage = "^6.2"
+pillow = "^8.3.2"
 
 [build-system]
 requires = ["poetry>=0.12"]
