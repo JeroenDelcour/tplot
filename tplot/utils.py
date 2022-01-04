@@ -105,7 +105,6 @@ def _optimize_xticklabel_anchors(
     Returns:
         List of [start, end] positions of labels.
     """
-    print(tick_positions, labels)
     anchors = []
     for tick_pos, label in zip(tick_positions, labels):
         left = tick_pos - len(label) // 2
@@ -179,5 +178,4 @@ def _optimize_xticklabel_anchors(
             anchors[i][0] = max(tick_positions[i - 1] + 1, anchors[i][0])
         if i < len(anchors) - 1:
             anchors[i][1] = min(tick_positions[i + 1], anchors[i][1])
-    print(anchors)
     return anchors
