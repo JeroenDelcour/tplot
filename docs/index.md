@@ -73,7 +73,7 @@ fig.show()
 ```
 ![Categorical data example](images/categorical.png)
 
-All plots support any combination of numerical and/or categorical data:
+Numerical and categorical data can be combined in the same plot:
 
 ```python
 from collections import Counter
@@ -90,9 +90,26 @@ fig.show()
 
 ![Spam, sausage, Spam, Spam, Spam, bacon, Spam, tomato and Spam](images/spamspamspamspam.png)
 
+### Markers
+
+`tplot` allows you to use any single character as a marker:
+
+```python
+import tplot
+
+fig = tplot.Figure(title="Twinkle twinkle little ★")
+notes = ["C", "C", "G", "G", "a", "a", "G", "F", "F", "E", "E", "D", "D", "C"]
+fig.scatter(notes, marker="♩")
+fig.show()
+```
+
+![Twinkle twinkle little star](images/twinkle_twinkle_little_star.png)
+
+Be wary of using [fullwidth characters](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms), because these will [mess up alignment](#character-alignment).
+
 ### Images (2D arrays)
 
-`tplot` can display a 2D array using a few different "colormaps".
+`tplot` can visualize 2D arrays using a few different "colormaps".
 
 ```python
 import tplot
@@ -141,30 +158,13 @@ from PIL import Image
 import numpy as np
 
 cameraman = Image.open("cameraman.png")
-cameraman = np.array(cameraman)
+cameraman = np.array(cameraman, dtype=np.uint8)
 fig = tplot.Figure()
 fig.image(cameraman)
 fig.show()
 ```
 
 ![Cameraman blocks](images/cameraman_blocks.png)
-
-## Markers
-
-`tplot` allows you to use any single character as a marker:
-
-```python
-import tplot
-
-fig = tplot.Figure(title="Twinkle twinkle little ★")
-notes = ["C", "C", "G", "G", "a", "a", "G", "F", "F", "E", "E", "D", "D", "C"]
-fig.scatter(notes, marker="♩")
-fig.show()
-```
-
-![Twinkle twinkle little star](images/twinkle_twinkle_little_star.png)
-
-Be wary of using [fullwidth characters](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms), because these will [mess up alignment](#character-alignment).
 
 ## Formatting issues
 
@@ -202,7 +202,7 @@ with open("fig.html", "w") as f:
 
 However, if you're using unicode characters (such as braille), you will probably run into character alignment issues.
 
-### Character alignment
+### Character alignment issues
 
 #### Fullwidth and halfwidth characters
 
