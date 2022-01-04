@@ -34,6 +34,18 @@ image = (image + image.T) / 2
 refence_figures_dir = Path("tests/reference_figures")
 
 
+def test_ascii_fallback():
+    fig = tplot.Figure(width=80, height=24, ascii=True)
+    for dataset_name, data in datasets.items():
+        fig.clear()
+        fig.scatter(data[0], data[1])
+        assert ascii_only(str(fig))
+
+    fig.clear()
+    fig.image(image)
+    assert ascii_only(str(fig))
+
+
 def test_y_only():
     fig = tplot.Figure(width=80, height=24)
     fig.scatter(range(10))
@@ -147,18 +159,6 @@ def test_image():
             f.write(str(fig))
         else:
             assert str(fig) == f.read()
-
-
-# def test_ascii_fallback():
-#     fig = tplot.Figure(width=80, height=24, ascii=True)
-#         for dataset_name, data in datasets.items():
-#         fig.clear()
-#         fig.scatter(data[0], data[1])
-#         fig.show()
-
-#     fig.clear()
-#     fig.image(image)
-#     fig.show()
 
 
 def test_legend():
