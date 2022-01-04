@@ -90,6 +90,65 @@ fig.show()
 
 ![Spam, sausage, Spam, Spam, Spam, bacon, Spam, tomato and Spam](images/spamspamspamspam.png)
 
+### Images (2D arrays)
+
+`tplot` can display a 2D array using a few different "colormaps".
+
+```python
+import tplot
+import numpy as np
+
+mean = np.array([[0, 0]]).T
+covariance = np.array([[0.7, 0.4], [0.4, 0.7]])
+cov_inv = np.linalg.inv(covariance)
+cov_det = np.linalg.det(covariance)
+
+x = np.linspace(-2, 2)
+y = np.linspace(-2, 2)
+X, Y = np.meshgrid(x, y)
+coe = 1.0 / ((2 * np.pi) ** 2 * cov_det) ** 0.5
+z = coe * np.e ** (
+    -0.5
+    * (
+        cov_inv[0, 0] * (X - mean[0]) ** 2
+        + (cov_inv[0, 1] + cov_inv[1, 0]) * (X - mean[0]) * (Y - mean[1])
+        + cov_inv[1, 1] * (Y - mean[1]) ** 2
+    )
+)
+
+fig = tplot.Figure(title="Multivariate gaussian")
+fig.image(z, cmap="block")
+fig.show()
+```
+
+![Multivariate gaussian with "block" colormap](images/multivariate_gaussian_block.png)
+
+```python
+fig = tplot.Figure(title="Multivariate gaussian")
+fig.image(z, cmap="ascii")
+fig.show()
+```
+![Multivariate gaussian with "ascii" colormap](images/multivariate_gaussian_ascii.png)
+
+
+Images can also be shown, if first converted to a `uint8` array:
+
+![Original cameraman](images/cameraman.png)
+
+```python
+import tplot
+from PIL import Image
+import numpy as np
+
+cameraman = Image.open("cameraman.png")
+cameraman = np.array(cameraman)
+fig = tplot.Figure()
+fig.image(cameraman)
+fig.show()
+```
+
+![Cameraman blocks](images/cameraman_blocks.png)
+
 ## Markers
 
 `tplot` allows you to use any single character as a marker:
