@@ -493,8 +493,8 @@ class Figure:
         self._plots.append(
             partial(
                 draw_image,
-                x=tuple(range(image.shape[1])),
-                y=tuple(range(image.shape[0])),
+                x=tuple(range(image.shape[1] + 1)),
+                y=tuple(range(image.shape[0] + 1)),
             )
         )
         self._clear_scale_cache()
