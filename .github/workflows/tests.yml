@@ -31,7 +31,10 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
       - name: Run tests
-        run: poetry run coverage run -m pytest
+        run: poetry run coverage run --omit="tests/*" -m pytest
+      - name: Export coverage report
+        run: poetry run coverage xml
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
