@@ -105,7 +105,7 @@ fig.show()
 
 ![Twinkle twinkle little star](images/twinkle_twinkle_little_star.png)
 
-Be wary of using [fullwidth characters](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms), because these will [mess up alignment](#character-alignment).
+Be wary of using [fullwidth characters](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms), because these will [mess up alignment](#character-alignment-issues).
 
 ### Images (2D arrays)
 
@@ -148,7 +148,7 @@ fig.show()
 ![Multivariate gaussian with "ascii" colormap](images/multivariate_gaussian_ascii.png)
 
 
-Images can also be shown, if first converted to a `uint8` array:
+Images can also be shown, if first converted to a Numpy array of type `uint8`:
 
 ![Original cameraman](images/cameraman.png)
 
