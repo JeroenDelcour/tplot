@@ -1,6 +1,5 @@
-name: test
-
-on: pull_request
+name: tests
+on: [push, pull-request]
 
 jobs:
   test:

@@ -1,8 +1,10 @@
 # tplot
 
 [![Documentation status](https://readthedocs.org/projects/tplot/badge/)](https://tplot.readthedocs.io/en/latest/)
+[![Tests status](https://github.com/JeroenDelcour/tplot/actions/workflows/tests.yml/badge.svg)](https://github.com/JeroenDelcour/tplot/actions/workflows/tests.yml)
  
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/tplot)](https://pypi.org/project/tplot/)
+[![License](https://img.shields.io/github/license/jeroendelcour/tplot)]([https://github.com/JeroenDelcour/tplot/blob/master/LICENSE)
 
 `tplot` is a Python module for creating text-based graphs. Useful for visualizing data to the terminal or log files.
 
