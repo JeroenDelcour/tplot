@@ -1,0 +1,14 @@
+site_name: tplot
+theme: readthedocs
+extra_css: [extra.css]
+plugins:
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        rendering:
+          show_root_heading: True
+          show_root_full_path: True
+          show_source: False
+          show_category_heading: True
+          members_order: source
