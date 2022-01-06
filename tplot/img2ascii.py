@@ -4,10 +4,9 @@ from functools import lru_cache
 
 COLORMAPS = {
     # "ascii": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "[::-1],
-    "ascii": " .:-=+*#%@",
-    "block": "█▓▒░ "[::-1]
+    "ascii": np.array(tuple(" .:-=+*#%@")),
+    "block": np.array(tuple(" ░▒▓█"))
 }
-COLORMAPS = {k: np.array(tuple(v)) for k, v in COLORMAPS.items()}
 
 
 @lru_cache()
@@ -26,11 +25,10 @@ def resize(image: np.ndarray, shape: tuple) -> np.ndarray:
 
 
 def img2ascii(image: np.ndarray, width: int, height: int, vmin: float, vmax: float, cmap: str = "block") -> np.ndarray:
-    cmap = COLORMAPS[cmap]
     if len(image.shape) != 2:
         raise ValueError("Invalid shape for grayscale image")
     image = resize(image, (height, width))
     scale = LinearScale()
-    scale.fit([vmin, vmax], target_min=0, target_max=len(cmap) - 1)
+    scale.fit([vmin, vmax], target_min=0, target_max=len(COLORMAPS[cmap]) - 1)
     cmap_idx = scale.transform(image.astype(float).clip(vmin, vmax)).round().astype(int)
-    return cmap[cmap_idx]
+    return COLORMAPS[cmap][cmap_idx]
