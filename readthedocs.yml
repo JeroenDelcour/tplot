@@ -4,5 +4,9 @@ mkdocs:
   configuration: mkdocs.yml
 
 python:
-   install:
-   - requirements: docs/requirements.txt
+  version: "3.8"
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
