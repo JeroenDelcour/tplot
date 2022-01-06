@@ -1,0 +1,5 @@
+# Required
+version: 2
+
+mkdocs:
+  configuration: mkdocs.yml
