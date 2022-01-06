@@ -6,7 +6,6 @@ mkdocs:
 python:
   version: "3.8"
   install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
+    - requirements: docs/requirements.txt
+    - method: setuptools
+      path: package
