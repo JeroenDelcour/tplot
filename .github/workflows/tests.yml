@@ -32,6 +32,8 @@ jobs:
         run: poetry install --no-interaction --no-root
       - name: Run tests
         run: poetry run coverage run --omit="tests/*" -m pytest
-      - name: "Upload coverage to Codecov"
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
+          fail_ci_if_error: false
+          
