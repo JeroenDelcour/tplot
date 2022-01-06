@@ -31,4 +31,7 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
       - name: Run tests
-        run: poetry run pytest
+        run: poetry run coverage run --omit="tests/*" -m pytest
+      - name: "Upload coverage to Codecov"
+        uses: codecov/codecov-action@v2
+        with:
