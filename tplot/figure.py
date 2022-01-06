@@ -2,14 +2,12 @@ from .scales import *
 from . import utils
 from .img2ascii import img2ascii
 from .braille import is_braille, draw_braille
-from warnings import warn
-from typing import Optional
+from typing import Callable, Optional, List, Tuple
 from shutil import get_terminal_size
 import numpy as np
 from functools import lru_cache, partial
 from termcolor import colored
 from colorama import init
-from copy import deepcopy
 
 init()
 
@@ -55,7 +53,7 @@ class Figure:
         legendloc: str = "topright",
         ascii: bool = False,
         y_axis_direction: str = "auto",
-    ):
+    ) -> None:
         if legendloc not in {"topleft", "topright", "bottomleft", "bottomright"}:
             raise ValueError("Unsupported legend location")
         if width is not None:
@@ -80,8 +78,8 @@ class Figure:
         self.height = height if height else term_height
 
         # gather stuff to plot before actually drawing it
-        self._plots = []
-        self._labels = []
+        self._plots: List[Callable] = []
+        self._labels: List[Tuple[str]] = []
 
     @property
     def _x(self):
@@ -279,7 +277,7 @@ class Figure:
         marker: str = "•",
         color: Optional[str] = None,
         label: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Adds scatter plot.
 
@@ -313,7 +311,7 @@ class Figure:
         marker: str = "braille",
         color: Optional[str] = None,
         label: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Adds line plot.
 
@@ -357,7 +355,7 @@ class Figure:
         marker: str = "█",
         color: Optional[str] = None,
         label: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Adds vertical bar plot.
 
@@ -389,7 +387,7 @@ class Figure:
         marker: str = "█",
         color: Optional[str] = None,
         label: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Adds horizontal bar plot.
 
@@ -414,7 +412,7 @@ class Figure:
 
         self._plots.append(partial(draw_hbar, x=x, y=y, marker=marker))
 
-    def text(self, x, y, text: str, color: Optional[str] = None):
+    def text(self, x, y, text: str, color: Optional[str] = None) -> None:
         """
         Adds text.
 
@@ -443,7 +441,7 @@ class Figure:
         vmin: Optional[float] = None,
         vmax: Optional[float] = None,
         cmap: str = "block",
-    ):
+    ) -> None:
         """
         Adds image.
 

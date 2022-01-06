@@ -3,11 +3,11 @@ import math
 from numbers import Number
 from functools import lru_cache
 import sys
-from typing import Generator, Iterable
+from typing import Generator, Iterable, List
 from warnings import warn
 
 
-def unicode_supported(test_str="─│┤┬┌┐└┘█•·"):
+def unicode_supported(test_str: str = "─│┤┬┌┐└┘█•·") -> bool:
     """ Tries to determine if unicode is supported by encoding a test string containing unicode characters. """
     try:
         test_str.encode(sys.stdout.encoding)
@@ -83,14 +83,14 @@ def _best_ticks(min_: float, max_: float, most: int) -> list:
 
 
 def _optimize_xticklabel_anchors(
-    tick_positions: Iterable[int],
-    labels: Iterable[str],
+    tick_positions: List[int],
+    labels: List[str],
     width: int,
     margin: int = 2,
     stepsize: float = 0.3,
     tolerance: float = 0.3,
     max_iterations: int = 1000,
-):
+) -> List[List[int]]:
     """
     Models the placement of tick labels as a 1-dimensional case of a force-directed graph.
     Spring forces between the labels are simulated iteratively until they stabilize.
