@@ -8,7 +8,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/tplot)](https://pypi.org/project/tplot/)
 [![License](https://img.shields.io/github/license/jeroendelcour/tplot)](https://github.com/JeroenDelcour/tplot/blob/master/LICENSE)
 
-`tplot` is a Python module for creating text-based graphs. Useful for visualizing data to the terminal or log files.
+`tplot` is a Python package for creating text-based graphs. Useful for visualizing data to the terminal or log files.
 
 ## Features
 
@@ -68,3 +68,5 @@ fig.show()
 ```
 
 ![Advanced example](docs/images/advanced.png)
+
+See more examples in the [documentation](https://tplot.readthedocs.io/en/latest/).
