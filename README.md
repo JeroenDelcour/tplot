@@ -70,3 +70,7 @@ fig.show()
 ![Advanced example](docs/images/advanced.png)
 
 See more examples in the [documentation](https://tplot.readthedocs.io/en/latest/).
+
+## Contributing
+
+Contributions are welcome. Bug fixes, feature suggestions, documentation improvements etc. can be contributed via [issues](https://github.com/JeroenDelcour/tplot/issues) and/or [pull requests](https://github.com/JeroenDelcour/tplot/pulls).
