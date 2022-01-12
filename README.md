@@ -19,6 +19,7 @@
 - Colors (using ANSI escape characters, with Windows support)
 - Few dependencies
 - Fast and lightweight
+- Doesn't take over your terminal (it only prints strings, so it works with tqdm etc.)
 
 ## Installation
 
