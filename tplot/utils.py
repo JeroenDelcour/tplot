@@ -1,7 +1,6 @@
 from bisect import bisect
 import math
 from numbers import Number
-from functools import lru_cache
 import sys
 from typing import Generator, Iterable, List
 from warnings import warn

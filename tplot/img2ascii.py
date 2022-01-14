@@ -9,7 +9,7 @@ COLORMAPS = {
 }
 
 
-@lru_cache()
+@lru_cache(maxsize=1)
 def _regular_meshgrid(xmin, ymin, xmax, ymax, **kwargs):
     return np.meshgrid(np.arange(xmin, xmax), np.arange(ymin, ymax), **kwargs)
 
