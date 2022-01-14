@@ -1,15 +1,17 @@
-from .scales import *
-from . import utils
-from .img2ascii import img2ascii
-from .braille import is_braille, draw_braille
-from typing import Callable, Optional, List, Tuple
+from functools import partial
 from numbers import Number
 from shutil import get_terminal_size
+from typing import Callable, Iterable, List, Optional, Tuple
+
 import numpy as np
-from functools import partial
 from backports.cached_property import cached_property
-from termcolor import colored
 from colorama import init
+from termcolor import colored
+
+from . import utils
+from .braille import draw_braille, is_braille
+from .img2ascii import img2ascii
+from .scales import CategoricalScale, LinearScale
 
 init()
 
@@ -41,7 +43,7 @@ class Figure:
         height: Height of the figure in number of characters. Defaults to the terminal window height, or falls back to 24.
         legendloc: Legend location. Supported values are `"topleft"`, `"topright"`, `"bottomleft"`, and `"bottomright"`.
         ascii: Set to `True` to only use ascii characters. Defaults to trying to detect if unicode is supported in the terminal.
-        y_axis_direction: Set to `"up"` to have Y axis point up (conventional for graphs), `"down"` to have Y axis point down 
+        y_axis_direction: Set to `"up"` to have Y axis point up (conventional for graphs), `"down"` to have Y axis point down
                           (conventional for images). By default, this is automatically determined based on the drawn plots.
     """
 
@@ -81,7 +83,7 @@ class Figure:
 
         # gather stuff to plot before actually drawing it
         self._plots: List[Callable] = []
-        self._labels: List[Tuple[str]] = []
+        self._labels: List[Tuple[str, str]] = []
 
     @property
     def _x(self):
@@ -121,17 +123,17 @@ class Figure:
             scale.fit(self._xtick_values, target_min, target_max)
         return scale
 
-    def _xax_height(self):
+    def _xax_height(self) -> int:
         return 2 + bool(self._xlabel)
 
-    def _fmt(self, value):
+    def _fmt(self, value) -> str:
         if isinstance(value, Number):
             return f"{value:.3g}"
         else:
             return str(value)
 
     @cached_property
-    def _yax_width(self):
+    def _yax_width(self) -> int:
         """
         Since y-axis tick labels are drawn horizontally, the width of the y axis
         depends on the length of the labels, which themselves depend on the data.
@@ -156,7 +158,7 @@ class Figure:
         if utils._is_numerical(self._y):
             return utils._best_ticks(min(self._y), max(self._y), most=self.height // 3)
         else:  # nominal
-            values = sorted([str(v) for v in set(self._y)])
+            values = tuple(sorted([str(v) for v in set(self._y)]))
             y_axis_height = self.height - bool(self.title) - self._xax_height()
             if len(values) > y_axis_height:
                 raise ValueError(
@@ -170,10 +172,10 @@ class Figure:
             return utils._best_ticks(min(self._x), max(self._x), most=self.width // 4)
         else:  # categorical
             # note this may not fit depending on the width of the figure
-            values = sorted([str(v) for v in set(self._x)])
+            values = tuple(sorted([str(v) for v in set(self._x)]))
             return values
 
-    def _draw_y_axis(self):
+    def _draw_y_axis(self) -> None:
         start = round(self._yscale.transform(self._ytick_values[-1]))
         end = round(self._yscale.transform(self._ytick_values[0]))
         start, end = min(start, end), max(start, end)
@@ -192,10 +194,8 @@ class Figure:
             ylabel = self._ylabel[: end - start]  # make sure it fits
             self._center_draw(ylabel, self._canvas[start:end, 0])
 
-    def _draw_x_axis(self):
-        tick_positions = [
-            round(v) for v in self._xscale.transform(self._xtick_values)
-        ]
+    def _draw_x_axis(self) -> None:
+        tick_positions = [round(v) for v in self._xscale.transform(self._xtick_values)]
         labels = [self._fmt(v) for v in self._xtick_values]
         # draw axis
         axis_start = round(self._xscale.transform(self._xtick_values[0]))
@@ -216,8 +216,7 @@ class Figure:
             xlabel = self._xlabel[: axis_end - axis_start]  # make sure it fits
             self._center_draw(xlabel, self._canvas[-1, axis_start:axis_end])
 
-    def _draw_legend(self):
-        # labelstrings = [f"{marker} {label}" for marker, label in self._labels]
+    def _draw_legend(self) -> None:
         width = max([len(label) for marker, label in self._labels]) + 4
         width = max(width, len("Legend") + 2)
         height = len(self._labels) + 2
@@ -244,8 +243,8 @@ class Figure:
             "└" + "─" * (width - 2) + "┘"
         )
 
-    def _prep(self, x, y, marker, color, label):
-        """ Data preparation stuff common to all plots. """
+    def _prep(self, x, y, marker, color, label) -> tuple:
+        """Data preparation stuff common to all plots."""
         x_is_valid = x is not None and len(x) > 0
         y_is_valid = y is not None and len(y) > 0
         if not x_is_valid and not y_is_valid:
@@ -451,7 +450,7 @@ class Figure:
 
         Args:
             image: 2D array.
-            vmin: Minimum value covered by the colormap. Lower values are clipped. 
+            vmin: Minimum value covered by the colormap. Lower values are clipped.
                   If set to `None`, uses 0 if the `dtype` of image is `numpy.uint8` (usual for pictures), `min(image)` otherwise.
             vmax: Maximum value covered by the colormap. Higher values are clipped.
                   If set to `None`, uses 255 if the `dtype` of image is `numpy.uint8` (usual for pictures), `max(image)` otherwise.
@@ -499,7 +498,7 @@ class Figure:
         )
         self._clear_scale_cache()
 
-    def _draw(self):
+    def _draw(self) -> None:
         if not self._plots:
             raise ValueError("No plots to draw.")
 
@@ -523,13 +522,13 @@ class Figure:
             for old, new in ASCII_FALLBACK.items():
                 self._canvas = np.char.replace(self._canvas, old, new)
 
-    def clear(self):
-        """ Clears previously added plots. """
+    def clear(self) -> None:
+        """Clears previously added plots."""
         self._plots = []
         self._labels = []
         self._clear_scale_cache()
 
-    def _clear_scale_cache(self):
+    def _clear_scale_cache(self) -> None:
         # clear cached values if cached, otherwise do nothing
         self.__dict__.pop("_xscale", None)
         self.__dict__.pop("_yscale", None)
@@ -537,11 +536,11 @@ class Figure:
         self.__dict__.pop("_ytick_values", None)
         self.__dict__.pop("_yax_width", None)
 
-    def __str__(self):
+    def __str__(self) -> str:
         self._draw()
         return "\n".join(["".join(row) for row in self._canvas.tolist()])
 
-    def show(self):
+    def show(self) -> None:
         """
         Prints the figure.
 

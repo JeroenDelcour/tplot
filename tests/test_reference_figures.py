@@ -1,7 +1,9 @@
-import tplot
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 from PIL import Image
+
+import tplot
 
 generate = False
 
@@ -103,28 +105,28 @@ def test_hbar():
 def test_image():
     fig = tplot.Figure(width=80, height=24)
     fig.image(gradient)
-    assert equal_to_file(str(fig), f"image.txt")
+    assert equal_to_file(str(fig), "image.txt")
 
     fig.clear()
     fig.image((gradient * 128).astype(np.uint8))
-    assert equal_to_file(str(fig), f"image_big_values.txt")
+    assert equal_to_file(str(fig), "image_big_values.txt")
 
     fig.clear()
     fig.image(gradient * -1e-3)
-    assert equal_to_file(str(fig), f"image_small_values.txt")
+    assert equal_to_file(str(fig), "image_small_values.txt")
 
     fig.clear()
     fig.image(gradient, vmin=-1, vmax=1)
-    assert equal_to_file(str(fig), f"image_vmin_vmax.txt")
+    assert equal_to_file(str(fig), "image_vmin_vmax.txt")
 
     fig.clear()
     fig.image(gradient, cmap="ascii")
-    assert equal_to_file(str(fig), f"image_ascii.txt")
+    assert equal_to_file(str(fig), "image_ascii.txt")
 
     fig.clear()
     cameraman = np.array(Image.open("tests/cameraman.png"))
     fig.image(cameraman)
-    assert equal_to_file(str(fig), f"image_cameraman.txt")
+    assert equal_to_file(str(fig), "image_cameraman.txt")
 
 
 def test_legend():
@@ -146,7 +148,7 @@ def test_axis_labels():
         legendloc="bottomright",
     )
     fig.scatter(range(10), label="Legend label goes here")
-    assert equal_to_file(str(fig), f"axis_labels.txt")
+    assert equal_to_file(str(fig), "axis_labels.txt")
 
 
 def test_colors():
@@ -155,7 +157,7 @@ def test_colors():
         ["red", "green", "blue", "yellow", "magenta", "cyan", "grey", "white"]
     ):
         fig.scatter([i], [i], color=color, label=color)
-    assert equal_to_file(str(fig), f"colors.txt")
+    assert equal_to_file(str(fig), "colors.txt")
 
 
 def test_text():
@@ -163,7 +165,7 @@ def test_text():
     fig.text(x=4, y=0, text="testing text")
     fig.text(x=4, y=-1, text="testing colored text", color="red")
     fig.text(x=9, y=8, text="testing text at right boundary")
-    assert equal_to_file(str(fig), f"text.txt")
+    assert equal_to_file(str(fig), "text.txt")
 
 
 def test_braille():
@@ -195,4 +197,4 @@ def test_y_axis_direction():
 
     fig = tplot.Figure(width=80, height=24, y_axis_direction="up")
     fig.image(gradient)
-    assert equal_to_file(str(fig), f"y_axis_up.txt")
+    assert equal_to_file(str(fig), "y_axis_up.txt")

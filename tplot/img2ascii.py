@@ -1,11 +1,13 @@
-import numpy as np
-from .scales import LinearScale
 from functools import lru_cache
+
+import numpy as np
+
+from .scales import LinearScale
 
 COLORMAPS = {
     # "ascii": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "[::-1],
     "ascii": np.array(tuple(" .:-=+*#%@")),
-    "block": np.array(tuple(" ░▒▓█"))
+    "block": np.array(tuple(" ░▒▓█")),
 }
 
 
@@ -24,7 +26,14 @@ def resize(image: np.ndarray, shape: tuple) -> np.ndarray:
     return image[x, y].T
 
 
-def img2ascii(image: np.ndarray, width: int, height: int, vmin: float, vmax: float, cmap: str = "block") -> np.ndarray:
+def img2ascii(
+    image: np.ndarray,
+    width: int,
+    height: int,
+    vmin: float,
+    vmax: float,
+    cmap: str = "block",
+) -> np.ndarray:
     if len(image.shape) != 2:
         raise ValueError("Invalid shape for grayscale image")
     image = resize(image, (height, width))
