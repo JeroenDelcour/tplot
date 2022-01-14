@@ -3,9 +3,10 @@ from . import utils
 from .img2ascii import img2ascii
 from .braille import is_braille, draw_braille
 from typing import Callable, Optional, List, Tuple
+from numbers import Number
 from shutil import get_terminal_size
 import numpy as np
-from functools import lru_cache, partial
+from functools import cached_property, partial
 from termcolor import colored
 from colorama import init
 
@@ -89,7 +90,7 @@ class Figure:
     def _y(self):
         return tuple([y for plot in self._plots for y in plot.keywords["y"]])
 
-    @lru_cache(maxsize=1)
+    @cached_property
     def _yscale(self):
         if utils._is_numerical(self._y):
             scale = LinearScale()
@@ -102,21 +103,21 @@ class Figure:
         scale.fit(self._y, target_min, target_max)
         if utils._is_numerical(self._y):
             # refit scale to tick values, since those lay just outside the input data range
-            scale.fit(self._ytick_values(), target_min, target_max)
+            scale.fit(self._ytick_values, target_min, target_max)
         return scale
 
-    @lru_cache(maxsize=1)
+    @cached_property
     def _xscale(self):
         if utils._is_numerical(self._x):
             scale = LinearScale()
         else:
             scale = CategoricalScale()
-        target_min = self._yax_width()
+        target_min = self._yax_width
         target_max = self.width - 1
         scale.fit(self._x, target_min, target_max)
         if utils._is_numerical(self._x):
             # refit scale to tick values, since those lay just outside the input data range
-            scale.fit(self._xtick_values(), target_min, target_max)
+            scale.fit(self._xtick_values, target_min, target_max)
         return scale
 
     def _xax_height(self):
@@ -128,13 +129,13 @@ class Figure:
         else:
             return str(value)
 
-    @lru_cache(maxsize=1)
+    @cached_property
     def _yax_width(self):
         """
         Since y-axis tick labels are drawn horizontally, the width of the y axis
         depends on the length of the labels, which themselves depend on the data.
         """
-        labels = (self._fmt(value) for value in self._ytick_values())
+        labels = (self._fmt(value) for value in self._ytick_values)
         width = max([len(label) for label in labels])
         width += 1  # for axis ticks
         width += bool(self._ylabel) * 2  # for y label
@@ -149,7 +150,7 @@ class Figure:
     def _rjust_draw(self, string, array, fillchar=" "):
         array[:] = list(string.rjust(len(array), fillchar))
 
-    @lru_cache(maxsize=1)
+    @cached_property
     def _ytick_values(self):
         if utils._is_numerical(self._y):
             return utils._best_ticks(min(self._y), max(self._y), most=self.height // 3)
@@ -162,7 +163,7 @@ class Figure:
                 )
             return values
 
-    @lru_cache(maxsize=1)
+    @cached_property
     def _xtick_values(self):
         if utils._is_numerical(self._x):
             return utils._best_ticks(min(self._x), max(self._x), most=self.width // 4)
@@ -172,18 +173,18 @@ class Figure:
             return values
 
     def _draw_y_axis(self):
-        start = round(self._yscale().transform(self._ytick_values()[-1]))
-        end = round(self._yscale().transform(self._ytick_values()[0]))
+        start = round(self._yscale.transform(self._ytick_values[-1]))
+        end = round(self._yscale.transform(self._ytick_values[0]))
         start, end = min(start, end), max(start, end)
-        self._canvas[start:end, self._yax_width() - 1] = "│"
+        self._canvas[start:end, self._yax_width - 1] = "│"
         for value, pos in zip(
-            self._ytick_values(), self._yscale().transform(self._ytick_values())
+            self._ytick_values, self._yscale.transform(self._ytick_values)
         ):
             pos = round(pos)
             label = self._fmt(value)
-            self._canvas[pos, self._yax_width() - 1] = "┤"
+            self._canvas[pos, self._yax_width - 1] = "┤"
             self._rjust_draw(
-                label, self._canvas[pos, bool(self._ylabel) * 2 : self._yax_width() - 1]
+                label, self._canvas[pos, bool(self._ylabel) * 2 : self._yax_width - 1]
             )
 
         if self._ylabel:
@@ -192,12 +193,12 @@ class Figure:
 
     def _draw_x_axis(self):
         tick_positions = [
-            round(v) for v in self._xscale().transform(self._xtick_values())
+            round(v) for v in self._xscale.transform(self._xtick_values)
         ]
-        labels = [self._fmt(v) for v in self._xtick_values()]
+        labels = [self._fmt(v) for v in self._xtick_values]
         # draw axis
-        axis_start = round(self._xscale().transform(self._xtick_values()[0]))
-        axis_end = round(self._xscale().transform(self._xtick_values()[-1]))
+        axis_start = round(self._xscale.transform(self._xtick_values[0]))
+        axis_end = round(self._xscale.transform(self._xtick_values[-1]))
         self._canvas[-self._xax_height(), axis_start:axis_end] = "─"
         # draw ticks
         for tick_pos in tick_positions:
@@ -221,13 +222,13 @@ class Figure:
         height = len(self._labels) + 2
 
         if self.legendloc.startswith("top"):
-            top = int(self._yscale().transform(self._ytick_values()[-1]))
+            top = int(self._yscale.transform(self._ytick_values[-1]))
         elif self.legendloc.startswith("bottom"):
-            top = int(self._yscale().transform(self._ytick_values()[0])) - height + 1
+            top = int(self._yscale.transform(self._ytick_values[0])) - height + 1
         if self.legendloc.endswith("right"):
-            left = int(self._xscale().transform(self._xtick_values()[-1])) - width + 1
+            left = int(self._xscale.transform(self._xtick_values[-1])) - width + 1
         elif self.legendloc.endswith("left"):
-            left = int(self._xscale().transform(self._xtick_values()[0]))
+            left = int(self._xscale.transform(self._xtick_values[0]))
 
         self._canvas[top, left : left + width] = list(
             "┌" + "Legend".center(width - 2, "─") + "┐"
@@ -291,7 +292,7 @@ class Figure:
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_scatter(x, y, marker):
-            for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
+            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 if not self.ascii_only and any((is_braille(char) for char in marker)):
                     xi = utils._round_half_away_from_zero(xi)
                     yi = utils._round_half_away_from_zero(yi)
@@ -325,8 +326,8 @@ class Figure:
         x, y, marker, color, label = self._prep(x, y, marker, color, label)
 
         def draw_line(x, y, marker):
-            xs = self._xscale().transform(x)
-            ys = self._yscale().transform(y)
+            xs = self._xscale.transform(x)
+            ys = self._yscale.transform(y)
             for (x0, x1), (y0, y1) in zip(zip(xs[:-1], xs[1:]), zip(ys[:-1], ys[1:])):
                 if not self.ascii_only and any((is_braille(char) for char in marker)):
                     for x, y in utils._plot_line_segment(
@@ -371,10 +372,10 @@ class Figure:
         def draw_bar(x, y, marker):
             marker = marker.replace("⠄", "⡇")  # in case of braille
             if utils._is_numerical(self._y):
-                origin = self._yscale().transform(min(self._ytick_values(), key=abs))
+                origin = self._yscale.transform(min(self._ytick_values, key=abs))
             else:
-                origin = self._yscale().transform(self._ytick_values()[0])
-            for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
+                origin = self._yscale.transform(self._ytick_values[0])
+            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 start, end = sorted([origin, yi])
                 self._canvas[round(start) : round(end) + 1, round(xi)] = marker
 
@@ -403,10 +404,10 @@ class Figure:
         def draw_hbar(x, y, marker):
             marker = marker.replace("⠄", "⠒")  # in case of braille
             if utils._is_numerical(self._x):
-                origin = self._xscale().transform(min(self._xtick_values(), key=abs))
+                origin = self._xscale.transform(min(self._xtick_values, key=abs))
             else:
-                origin = self._xscale().transform(self._xtick_values()[0])
-            for xi, yi in zip(self._xscale().transform(x), self._yscale().transform(y)):
+                origin = self._xscale.transform(self._xtick_values[0])
+            for xi, yi in zip(self._xscale.transform(x), self._yscale.transform(y)):
                 start, end = sorted([origin, xi])
                 self._canvas[round(yi), round(start) : round(end) + 1] = marker
 
@@ -426,8 +427,8 @@ class Figure:
             text = colored(text, color)
 
         def draw_text(x, y, text):
-            x0 = round(self._xscale().transform(x[0]))
-            y0 = round(self._yscale().transform(y[0]))
+            x0 = round(self._xscale.transform(x[0]))
+            y0 = round(self._yscale.transform(y[0]))
             for i, char in enumerate(text):
                 if x0 + i >= self.width:
                     break
@@ -471,10 +472,10 @@ class Figure:
             self._y_axis_direction = "down"
 
         def draw_image(x, y):
-            xmin = round(self._xscale().transform(0))
-            ymin = round(self._yscale().transform(0))
-            xmax = round(self._xscale().transform(image.shape[1]))
-            ymax = round(self._yscale().transform(image.shape[0]))
+            xmin = round(self._xscale.transform(0))
+            ymin = round(self._yscale.transform(0))
+            xmax = round(self._xscale.transform(image.shape[1]))
+            ymax = round(self._yscale.transform(image.shape[0]))
             ymin, ymax = min(ymin, ymax), max(ymin, ymax)
             drawn = img2ascii(
                 image,
@@ -528,11 +529,12 @@ class Figure:
         self._clear_scale_cache()
 
     def _clear_scale_cache(self):
-        self._xscale.cache_clear()
-        self._yscale.cache_clear()
-        self._xtick_values.cache_clear()
-        self._ytick_values.cache_clear()
-        self._yax_width.cache_clear()
+        # clear cached values if cached, otherwise do nothing
+        self.__dict__.pop("_xscale", None)
+        self.__dict__.pop("_yscale", None)
+        self.__dict__.pop("_xtick_values", None)
+        self.__dict__.pop("_ytick_values", None)
+        self.__dict__.pop("_yax_width", None)
 
     def __str__(self):
         self._draw()
