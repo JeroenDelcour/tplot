@@ -6,7 +6,8 @@ from typing import Callable, Optional, List, Tuple
 from numbers import Number
 from shutil import get_terminal_size
 import numpy as np
-from functools import cached_property, partial
+from functools import partial
+from backports.cached_property import cached_property
 from termcolor import colored
 from colorama import init
 
