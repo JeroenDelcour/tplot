@@ -1,5 +1,13 @@
-from tplot.braille import *
 import pytest
+
+from tplot.braille import (
+    braille_bin,
+    braille_from_xy,
+    combine_braille,
+    draw_braille,
+    get_braille,
+    is_braille,
+)
 
 
 def test_single_characters():
@@ -19,11 +27,11 @@ def test_braille_bin():
 
 
 def test_is_braille():
-    assert is_braille("⠀") == True
-    assert is_braille(" ") == False
-    assert is_braille("⟿") == False
-    assert is_braille("⤀") == False
-    assert is_braille("⡷") == True
+    assert is_braille("⠀") is True
+    assert is_braille(" ") is False
+    assert is_braille("⟿") is False
+    assert is_braille("⤀") is False
+    assert is_braille("⡷") is True
 
 
 def test_braile_from_xy():

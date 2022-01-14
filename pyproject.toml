@@ -22,6 +22,12 @@ mkdocstrings = "^0.17.0"
 pytest = "^6.2.5"
 coverage = "^6.2"
 pillow = "^8.3.2"
+flake8 = "^4.0.1"
+pre-commit = "^2.16.0"
+mypy = "^0.931"
+
+[tool.isort]
+profile = "black"
 
 [build-system]
 requires = ["poetry>=0.12"]

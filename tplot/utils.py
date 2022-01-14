@@ -1,13 +1,13 @@
-from bisect import bisect
 import math
-from numbers import Number
 import sys
+from bisect import bisect
+from numbers import Number
 from typing import Generator, Iterable, List
 from warnings import warn
 
 
 def unicode_supported(test_str: str = "─│┤┬┌┐└┘█•·") -> bool:
-    """ Tries to determine if unicode is supported by encoding a test string containing unicode characters. """
+    """Tries to determine if unicode is supported by encoding a test string containing unicode characters."""
     try:
         test_str.encode(sys.stdout.encoding)
         return True
@@ -16,7 +16,7 @@ def unicode_supported(test_str: str = "─│┤┬┌┐└┘█•·") -> boo
 
 
 def _is_numerical(data: Iterable[Number]) -> bool:
-    """ Returns True if all values in given iterable are numbers. """
+    """Returns True if all values in given iterable are numbers."""
     return all([isinstance(value, Number) for value in data])
 
 
@@ -59,7 +59,7 @@ def _round_half_away_from_zero(num: float) -> int:
 
 
 def _best_ticks(min_: float, max_: float, most: int) -> list:
-    """ Returns a list of suitable tick values. """
+    """Returns a list of suitable tick values."""
     # find step size
     range_ = max_ - min_
     if range_ == 0:

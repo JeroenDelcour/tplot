@@ -19,21 +19,25 @@ def get_braille(s: str) -> str:
     '11111111' = ⣿
     '00000000' = ⠀ (empty braille character)
     """
-    s = s[:3] + s[4:7] + s[3] + s[7]  # rearrange ISO/TR 11548-1 dot order to something more suitable
+    s = (
+        s[:3] + s[4:7] + s[3] + s[7]
+    )  # rearrange ISO/TR 11548-1 dot order to something more suitable
     return chr(0x2800 + int(s[::-1], 2))
 
 
 def braille_bin(char: str) -> str:
-    """ Inverse of get_braille() """
+    """Inverse of get_braille()"""
     o = ord(char) - 0x2800
     s = format(o, "b").rjust(8, "0")
     s = s[::-1]
-    s = s[:3] + s[6] + s[3:6] + s[7]  # rearrange ISO/TR 11548-1 dot order to something more suitable
+    s = (
+        s[:3] + s[6] + s[3:6] + s[7]
+    )  # rearrange ISO/TR 11548-1 dot order to something more suitable
     return s
 
 
 def is_braille(char: str) -> bool:
-    """ Return True if provided unicode character is a braille character. """
+    """Return True if provided unicode character is a braille character."""
     return isinstance(char, str) and 0x2800 <= ord(char[0]) <= 0x28FF
 
 
@@ -44,8 +48,8 @@ def braille_from_xy(x: int, y: int) -> str:
     """
     if not 0 <= x <= 1 or not 0 <= y <= 3:
         raise ValueError("Invalid braille dot position.")
-    s = ["0"]*8
-    s[x*4+y] = "1"
+    s = ["0"] * 8
+    s[x * 4 + y] = "1"
     return get_braille("".join(s))
 
 

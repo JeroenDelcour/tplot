@@ -3,7 +3,7 @@
 [![Documentation status](https://readthedocs.org/projects/tplot/badge/)](https://tplot.readthedocs.io/en/latest/)
 [![Tests status](https://github.com/JeroenDelcour/tplot/actions/workflows/tests.yml/badge.svg)](https://github.com/JeroenDelcour/tplot/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/JeroenDelcour/tplot/branch/master/graph/badge.svg?token=WXH7I3BGEO)](https://codecov.io/gh/JeroenDelcour/tplot)
- 
+
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/tplot)](https://pypi.org/project/tplot/)
 [![PyPI version](https://img.shields.io/pypi/v/tplot)](https://pypi.org/project/tplot/)
 [![License](https://img.shields.io/github/license/jeroendelcour/tplot)](https://github.com/JeroenDelcour/tplot/blob/master/LICENSE)

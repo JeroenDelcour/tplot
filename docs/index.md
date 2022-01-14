@@ -182,7 +182,7 @@ However, if you have a figure with colors and you try to write it to a file (or 
 \x1b[0m    \ni     │\x1b[31m⢀\x1b[0m\x1b[31m⠎\x1b[0m      \x1b[34m⢇\x1b[0m       \x1b[31m⢣\x1b[0m        \x1b[34m⡠\x1b[0m\x1b[34m⠃\x1b[0m      \x1b[31m⢠\x1b[0m\x1b[31m⠃\x1b[0m     \x1b[34m⠈\x1b[0m\x1b[34m⢆\x1b[0m      \x1b[31m⠈\x1b[0m\x1b[31m⢆\x1b[0m   \nt    0┤        \x1b[34m⠈\x1b[0m\x1b[34m⠢\x1b[0m\x1b[34m⡀\x1b[0m      \x1b[31m⠱\x1b[0m\x1b[31m⡀\x1b[0m     \x1b[34m⡜\x1b[0m       \x1b[31m⡰\x1b[0m\x1b[31m⠁\x1b[0m       \x1b[34m⠈\x1b[0m\x1b[34m⢆\x1b[0m          \nu     │┌─Legend─┐\x1b[34m⠱\x1b[0m\x1b[34m⡀\x1b[0m      \x1b[31m⠱\x1b[0m\x1b[31m⡀\x1b[0m  \x1b[34m⢀\x1b[0m\x1b[34m⠜\x1b[0m       \x1b[31m⡰\x1b[0m\x1b[31m⠁\x1b[0m         \x1b[34m⠈\x1b[0m\x1b[34m⢢\x1b[0m         \nd -0.5┤│\x1b[31m⠄\x1b[0m sin(x)│ \x1b[34m
 ⠑\x1b[0m\x1b[34m⢄\x1b[0m      \x1b[31m⠑\x1b[0m\x1b[31m⢢\x1b[0m\x1b[34m⢠\x1b[0m\x1b[34m⠃\x1b[0m      \x1b[31m⢠\x1b[0m\x1b[31m⠔\x1b[0m\x1b[31m⠁\x1b[0m            \x1b[34m⠱\x1b[0m\x1b[34m⡀\x1b[0m       \ne     ││\x1b[34m⠄\x1b[0m cos(x)│   \x1b[34m⠱\x1b[0m\x1b[34m⣀\x1b[0m    \x1b[34m⡠\x1b[0m\x1b[34m⠔\x1b[0m\x1b[34m⠑\x1b[0m\x1b[31m⠤\x1b[0m\x1b[31m⡀\x1b[0m   \x1b[31m⣀\x1b[0m\x1b[31m⠔\x1b[0m\x1b[31m⠁\x1b[0m               \x1b[34m⠈\x1b[0m\x1b[34m⠢\x1b[0m\x1b[34m⡀\x1b[0m     \n    -1┤
 └────────┘     \x1b[34m⠉\x1b[0m\x1b[34m⠒\x1b[0m\x1b[34m⠒\x1b[0m\x1b[34m⠊\x1b[0m    \x1b[31m⠈\x1b[0m\x1b[31m⠒\x1b[0m\x1b[31m⠒\x1b[0m\x1b[31m⠊\x1b[0m                    \x1b[34m⠈\x1b[0m\x1b[34m⠉\x1b[0m\x1b[34m⠒\x1b[0m   \n       ┬─────────┬──
-────────┬─────────┬──────────┬─────────┬\n       0         2          4         6          8        10\n                              Phase                         
+────────┬─────────┬──────────┬─────────┬\n       0         2          4         6          8        10\n                              Phase
 ```
 
 This is because `tplot` uses ANSI escape characters to display colors. ANSI escape characters allow terminals to display color, but don't work outside the terminal. Regular UTF-8 or unicode-encoded text files do not support colored text. If you want to write figures to a text file (e.g. for logging purposes), it is best to avoid the use of color.
@@ -239,16 +239,16 @@ fig.show()
 But many environments treat braille as somewhere in between halfwidth and fullwidth characters, leading to close-but-not-quite aligned plots:
 
 ```text
-                                                                                
+
   1┤                                                                      ⣀⣀⠤⠤⠔⠒
-   │                                                            ⢀⣀⣀⠤⠤⠒⠒⠊⠉⠉      
-   │                                                   ⣀⣀⡠⠤⠤⠒⠒⠉⠉⠁               
-   │                                          ⣀⣀⠤⠤⠔⠒⠒⠉⠉                         
-0.5┤                                ⢀⣀⡠⠤⠤⠒⠒⠊⠉⠉                                  
-   │                       ⣀⣀⡠⠤⠔⠒⠒⠉⠉⠁                                           
-   │             ⢀⣀⣀⠤⠤⠔⠒⠊⠉⠉                                                     
-   │    ⢀⣀⡠⠤⠤⠒⠒⠊⠉⠁                                                              
-  0┤⠐⠒⠉⠉⠁                                                                       
+   │                                                            ⢀⣀⣀⠤⠤⠒⠒⠊⠉⠉
+   │                                                   ⣀⣀⡠⠤⠤⠒⠒⠉⠉⠁
+   │                                          ⣀⣀⠤⠤⠔⠒⠒⠉⠉
+0.5┤                                ⢀⣀⡠⠤⠤⠒⠒⠊⠉⠉
+   │                       ⣀⣀⡠⠤⠔⠒⠒⠉⠉⠁
+   │             ⢀⣀⣀⠤⠤⠔⠒⠊⠉⠉
+   │    ⢀⣀⡠⠤⠤⠒⠒⠊⠉⠁
+  0┤⠐⠒⠉⠉⠁
     ┬───────┬──────┬───────┬──────┬───────┬──────┬───────┬──────┬───────┬──────┬
     0      0.1    0.2     0.3    0.4     0.5    0.6     0.7    0.8     0.9     1
 ```

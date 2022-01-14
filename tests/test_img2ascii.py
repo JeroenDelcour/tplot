@@ -1,5 +1,6 @@
 import numpy as np
-from tplot.img2ascii import *
+
+from tplot.img2ascii import resize
 
 
 def test_nearest_neighbor_downscaling():
@@ -21,4 +22,3 @@ def test_nearest_neighbor_upscaling():
             [[0, 0, 1, 1], [0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0]], dtype=np.uint8
         ),
     )
-
