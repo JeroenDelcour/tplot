@@ -6,7 +6,7 @@ from typing import Generator, Iterable, List
 from warnings import warn
 
 
-def unicode_supported(test_str: str = "─│┤┬┌┐└┘█•·") -> bool:
+def unicode_supported(test_str: str = "─│┤┬┌┐└┘█•·⣿") -> bool:
     """Tries to determine if unicode is supported by encoding a test string containing unicode characters."""
     try:
         test_str.encode(sys.stdout.encoding)
