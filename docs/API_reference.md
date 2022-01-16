@@ -1,3 +1,0 @@
-## API refence
-
-::: tplot.Figure
