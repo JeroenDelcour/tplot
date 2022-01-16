@@ -15,11 +15,11 @@
 - Scatter plots, line plots, horizontal/vertical bar plots, and image plots
 - Supports numerical and categorical data
 - Legend
-- Unicode characters (with automatic ascii fallback if unicode is not supported)
-- Colors (using ANSI escape characters, with Windows support)
+- Unicode characters (with automatic ascii fallback)
+- Colors
 - Few dependencies
 - Fast and lightweight
-- Doesn't take over your terminal (it only prints strings, so it works with tqdm etc.)
+- Doesn't take over your terminal (only prints strings)
 
 ## Installation
 
