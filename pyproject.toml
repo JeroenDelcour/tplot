@@ -27,6 +27,9 @@ Sphinx = "^4.3.2"
 sphinxcontrib-napoleon = "^0.7"
 sphinx-rtd-theme = "^1.0.0"
 
+[tool.poetry.extras]
+docs = ["sphinx", "sphinxcontrib-napoleon"]
+
 [tool.isort]
 profile = "black"
 
