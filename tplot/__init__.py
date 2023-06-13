@@ -1,9 +1,6 @@
-from .figure import Figure
+from importlib.metadata import version
 
-try:
-    from importlib.metadata import version
-except ModuleNotFoundError:
-    from importlib_metadata import version
+from .figure import Figure
 
 try:
     __version__ = version(__name__)
