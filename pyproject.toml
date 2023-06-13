@@ -1,35 +1,43 @@
-[tool.poetry]
+[project]
 name = "tplot"
-version = "0.3.2"
+version = "0.3.3"
 description = "Create text-based graphs"
 readme = "README.md"
-authors = ["Jeroen Delcour <jeroendelcour@gmail.com>"]
-homepage = "https://github.com/JeroenDelcour/tplot"
-repository = "https://github.com/JeroenDelcour/tplot"
-license = "MIT"
+requires-python = ">=3.8,<4"
+license = {file = "LICENSE.txt"}
+authors = [{name = "Jeroen Delcour", email = "jeroendelcour@gmail.com"}]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+]
+dependencies = [
+    "colorama >=0.4.3",
+    "numpy >=1.11",
+    "termcolor-whl >=1.1.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.6.2,<4.0"
-colorama = "^0.4.3"
-numpy = "^1.11"
-termcolor-whl = "^1.1.0"
-importlib-metadata = {version = "^3.1.0", python = "<3.8"}
-"backports.cached-property" = "^1.0.1"
+[project.optional-dependencies]
+dev = [
+    "flit >=3.9.0",
+    "pytest >=7.3.2",
+    "pytest-cov >=4.1.0",
+    "coverage >=6.2",
+    "black >=23.0.0",
+    "isort >=5.12.0",
+    "flake8 >=4.0.1",
+    "pillow >=8.3.2",
+    "pre-commit >=2.16.0",
+    "mypy >=0.931",
+    "Sphinx >=4.3.2",
+    "sphinx-rtd-theme >=1.0.0",
+]
 
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-coverage = "^6.2"
-pillow = "^8.3.2"
-flake8 = "^4.0.1"
-pre-commit = "^2.16.0"
-mypy = "^0.931"
-Sphinx = "^4.3.2"
-sphinxcontrib-napoleon = "^0.7"
-sphinx-rtd-theme = "^1.0.0"
-
-[tool.isort]
-profile = "black"
+[project.urls]
+Documentation = "https://tplot.readthedocs.io/en/latest/"
+Source = "https://github.com/JeroenDelcour/tplot"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"

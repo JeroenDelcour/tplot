@@ -1,10 +1,9 @@
-from functools import partial
+from functools import cached_property, partial
 from numbers import Number
 from shutil import get_terminal_size
 from typing import Callable, Iterable, List, Optional, Tuple
 
 import numpy as np
-from backports.cached_property import cached_property
 from colorama import init
 from termcolor import colored
 
