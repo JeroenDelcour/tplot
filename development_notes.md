@@ -13,4 +13,6 @@ Bump the version in `pyproject.toml`.
 
 [Publish on pypi](https://flit.pypa.io/en/stable/): `flit publish`
 
+[Create a release on GitHub](https://github.com/JeroenDelcour/tplot/releases/new).
+
 Documentation is built automatically by readthedocs. To build locally, run: `cd docs && make html`
