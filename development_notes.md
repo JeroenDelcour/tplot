@@ -3,7 +3,15 @@ Development notes
 
 Because I forget.
 
-For a new release:
+## Development setup
+
+Install dev dependencies: `pip install ".[dev]"`
+
+Install pre-commit hooks: `pre-commit install`
+
+For code formatting, `black` and `isort` are used with default settings.
+
+## For a new release
 
 Bump the version in `pyproject.toml`.
 
