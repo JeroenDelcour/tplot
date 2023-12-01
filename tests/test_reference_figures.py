@@ -5,14 +5,14 @@ from PIL import Image
 
 import tplot
 
-generate = False
+GENERATE = False
 
 
 def equal_to_file(output, filename):
     with open(
-        Path("tests") / "reference_figures" / filename, "w" if generate else "r"
+        Path("tests") / "reference_figures" / filename, "w" if GENERATE else "r"
     ) as f:
-        if generate:
+        if GENERATE:
             f.write(output)
             return True
         else:
@@ -63,8 +63,8 @@ def test_ascii_fallback():
 def test_y_only():
     fig = tplot.Figure(width=80, height=24)
     fig.scatter(range(10))
-    with open(reference_figures_dir / "y_only.txt", "w" if generate else "r") as f:
-        if generate:
+    with open(reference_figures_dir / "y_only.txt", "w" if GENERATE else "r") as f:
+        if GENERATE:
             f.write(str(fig))
         else:
             assert str(fig) == f.read()

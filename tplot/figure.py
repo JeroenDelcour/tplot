@@ -168,7 +168,7 @@ class Figure:
     @cached_property
     def _xtick_values(self):
         if utils._is_numerical(self._x):
-            return utils._best_ticks(min(self._x), max(self._x), most=self.width // 4)
+            return utils._best_ticks(min(self._x), max(self._x), most=self.width // 5)
         else:  # categorical
             # note this may not fit depending on the width of the figure
             values = tuple(sorted([str(v) for v in set(self._x)]))
