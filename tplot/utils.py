@@ -86,7 +86,7 @@ def _optimize_xticklabel_anchors(
     labels: List[str],
     width: int,
     margin: int = 2,
-    stepsize: float = 0.3,
+    stepsize: float = 0.1,
     tolerance: float = 0.3,
     max_iterations: int = 1000,
 ) -> List[List[int]]:
@@ -97,6 +97,7 @@ def _optimize_xticklabel_anchors(
     Args:
         tick_positions: Ordered positions of the ticks.
         labels: Tick labels.
+        width: Width of plot.
         margin: Margin between labels.
         stepsize: Spring force simulation step size.
         tolerance: Tolerance for termination.
@@ -108,6 +109,7 @@ def _optimize_xticklabel_anchors(
     for tick_pos, label in zip(tick_positions, labels):
         left = tick_pos - len(label) // 2
         right = left + len(label)
+        # if anchor is out of bounds, move it inside bounds
         d = right - width
         if d > 0:
             left -= d
@@ -147,6 +149,15 @@ def _optimize_xticklabel_anchors(
                 d = tick_pos - round(anchor[1]) + 1
                 anchor[0] += d
                 anchor[1] += d
+            # don't move out of bounds
+            d = anchor[0] - 0
+            if d < 0:
+                anchor[1] += -d
+                anchor[0] += -d
+            d = anchor[1] - width
+            if d > 0:
+                anchor[1] -= d
+                anchor[0] -= d
 
         # recalculate forces
         prev_total_forces = sum([abs(f) for f in forces])
