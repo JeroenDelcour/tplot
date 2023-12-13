@@ -60,6 +60,7 @@ def _round_half_away_from_zero(num: float) -> int:
 
 def _best_ticks(min_: float, max_: float, most: int) -> list:
     """Returns a list of suitable tick values."""
+    most = max(most, 1)
     # find step size
     range_ = max_ - min_
     if range_ == 0:

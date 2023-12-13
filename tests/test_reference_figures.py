@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 from PIL import Image
 
 import tplot
@@ -58,6 +59,20 @@ def test_ascii_fallback():
     fig.clear()
     fig.image(gradient)
     assert ascii_only(str(fig))
+
+
+def test_figure_too_small_error():
+    fig = tplot.Figure(width=1, height=1)
+    for dataset_name, data in datasets.items():
+        fig.clear()
+        fig.scatter(data[0], data[1])
+        with pytest.raises(IndexError):
+            str(fig)
+
+    fig.clear()
+    fig.image(gradient)
+    with pytest.raises(IndexError):
+        str(fig)
 
 
 def test_y_only():

@@ -160,8 +160,8 @@ class Figure:
             values = tuple(sorted([str(v) for v in set(self._y)]))
             y_axis_height = self.height - bool(self.title) - self._xax_height()
             if len(values) > y_axis_height:
-                raise ValueError(
-                    f"Too many ({len(values)}) unique y values to fit into y axis. Try making the graph taller."
+                raise IndexError(
+                    f"Too many ({len(values)}) unique y values to fit into y axis. Try making the figure taller."
                 )
             return values
 
@@ -505,17 +505,20 @@ class Figure:
         self._canvas = np.empty((self.height, self.width), dtype="U17")
         self._canvas[:] = " "
 
-        if self.title:
-            title = self.title[: self.width]  # make sure it fits
-            self._center_draw(title, self._canvas[0, :])
+        try:
+            if self.title:
+                title = self.title[: self.width]  # make sure it fits
+                self._center_draw(title, self._canvas[0, :])
 
-        self._draw_x_axis()
-        self._draw_y_axis()
+            self._draw_x_axis()
+            self._draw_y_axis()
 
-        for plot in self._plots:
-            plot()
-        if self._labels:
-            self._draw_legend()
+            for plot in self._plots:
+                plot()
+            if self._labels:
+                self._draw_legend()
+        except IndexError:
+            raise IndexError("Drawing out of bounds. Try increasing the figure size.")
 
         if self.ascii_only:
             for old, new in ASCII_FALLBACK.items():
