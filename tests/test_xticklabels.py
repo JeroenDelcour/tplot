@@ -13,7 +13,7 @@ def test_boundaries():
     anchors = _optimize_xticklabel_anchors(
         tick_positions=[0, 20], labels=["0.0", "2.0"], width=21
     )
-    assert anchors == [[0, 3], [18, 21]]
+    assert anchors == [[0, 2], [18, 21]]
 
 
 def test_margin():
@@ -51,4 +51,4 @@ def test_complex():
         ],
         width=60,
     )
-    assert anchors == [[0, 19], [16, 34], [33, 38], [39, 48], [48, 60]]
+    assert anchors == [[0, 16], [16, 34], [34, 39], [39, 48], [48, 60]]

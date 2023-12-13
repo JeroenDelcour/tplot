@@ -149,15 +149,6 @@ def _optimize_xticklabel_anchors(
                 d = tick_pos - round(anchor[1]) + 1
                 anchor[0] += d
                 anchor[1] += d
-            # don't move out of bounds
-            d = anchor[0] - 0
-            if d < 0:
-                anchor[1] += -d
-                anchor[0] += -d
-            d = anchor[1] - width
-            if d > 0:
-                anchor[1] -= d
-                anchor[0] -= d
 
         # recalculate forces
         prev_total_forces = sum([abs(f) for f in forces])
