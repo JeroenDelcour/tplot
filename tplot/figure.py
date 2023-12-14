@@ -249,12 +249,12 @@ class Figure:
         if not x_is_valid and not y_is_valid:
             raise ValueError("`x` and/or `y` must be provided and not be empty")
 
-        if not x_is_valid and y_is_valid:
-            # only `y` is provided
-            x = range(len(y))
         if x_is_valid and y is None:
             # only `x` is provided, assume `x` is `y`
             x, y = range(len(x)), x
+        elif x is None and y_is_valid:
+            # only `y` keyword argument is provided
+            x = range(len(y))
 
         if not len(x) == len(y):
             raise ValueError("`x` and `y` must have the same length")

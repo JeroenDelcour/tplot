@@ -75,14 +75,31 @@ def test_figure_too_small_error():
         str(fig)
 
 
-def test_y_only():
+def test_data_validation():
     fig = tplot.Figure(width=80, height=24)
-    fig.scatter(range(10))
-    with open(reference_figures_dir / "y_only.txt", "w" if GENERATE else "r") as f:
-        if GENERATE:
-            f.write(str(fig))
-        else:
-            assert str(fig) == f.read()
+    with pytest.raises(ValueError):
+        fig.scatter(x=range(3), y=range(5))
+    with pytest.raises(ValueError):
+        fig.scatter(x=[], y=range(3))
+
+
+def test_y_only():
+    # as positional argument
+    pos_arg_fig = tplot.Figure(width=80, height=24)
+    pos_arg_fig.scatter(range(10))
+
+    # as keyword argument
+    y_kwarg_fig = tplot.Figure(width=80, height=24)
+    y_kwarg_fig.scatter(y=range(10))
+
+    assert str(y_kwarg_fig) == str(pos_arg_fig)
+
+    for s in (str(pos_arg_fig), str(y_kwarg_fig)):
+        with open(reference_figures_dir / "y_only.txt", "w" if GENERATE else "r") as f:
+            if GENERATE:
+                f.write(str(f))
+            else:
+                assert s == f.read()
 
 
 def test_scatter():
